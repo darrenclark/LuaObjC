@@ -24,6 +24,7 @@ NSString *LuaContextErrorDomain = @"LuaContextError";
 	
 	lua_ = luaL_newstate();
 	luaL_openlibs(lua_);
+	luaobjc_open(lua_);
 	
 	return self;
 }

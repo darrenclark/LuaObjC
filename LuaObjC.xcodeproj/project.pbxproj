@@ -47,6 +47,8 @@
 		95F67995168A4F81004819EE /* lzio.c in Sources */ = {isa = PBXBuildFile; fileRef = 95F67972168A4F81004819EE /* lzio.c */; };
 		95F6799A168A5172004819EE /* LuaContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F67999168A5172004819EE /* LuaContext.m */; };
 		95F679A8168A5BDE004819EE /* test.lua in Resources */ = {isa = PBXBuildFile; fileRef = 95F679A7168A5BDE004819EE /* test.lua */; };
+		95F679AB168A5C2C004819EE /* luaobjc_object.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F679AA168A5C2C004819EE /* luaobjc_object.m */; };
+		95F679AE168A5C56004819EE /* luaobjc.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F679AD168A5C56004819EE /* luaobjc.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -120,6 +122,10 @@
 		95F67998168A5172004819EE /* LuaContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LuaContext.h; sourceTree = "<group>"; };
 		95F67999168A5172004819EE /* LuaContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LuaContext.m; sourceTree = "<group>"; };
 		95F679A7168A5BDE004819EE /* test.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.lua; sourceTree = "<group>"; };
+		95F679A9168A5C2C004819EE /* luaobjc_object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_object.h; sourceTree = "<group>"; };
+		95F679AA168A5C2C004819EE /* luaobjc_object.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_object.m; sourceTree = "<group>"; };
+		95F679AC168A5C56004819EE /* luaobjc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc.h; sourceTree = "<group>"; };
+		95F679AD168A5C56004819EE /* luaobjc.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -256,6 +262,10 @@
 			children = (
 				95F67998168A5172004819EE /* LuaContext.h */,
 				95F67999168A5172004819EE /* LuaContext.m */,
+				95F679AC168A5C56004819EE /* luaobjc.h */,
+				95F679AD168A5C56004819EE /* luaobjc.m */,
+				95F679A9168A5C2C004819EE /* luaobjc_object.h */,
+				95F679AA168A5C2C004819EE /* luaobjc_object.m */,
 			);
 			path = LuaObjCLib;
 			sourceTree = "<group>";
@@ -357,6 +367,8 @@
 				95F67994168A4F81004819EE /* lvm.c in Sources */,
 				95F67995168A4F81004819EE /* lzio.c in Sources */,
 				95F6799A168A5172004819EE /* LuaContext.m in Sources */,
+				95F679AB168A5C2C004819EE /* luaobjc_object.m in Sources */,
+				95F679AE168A5C56004819EE /* luaobjc.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
