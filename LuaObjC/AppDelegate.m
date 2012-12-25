@@ -1,12 +1,16 @@
 //
-//  AppDelegate.m
-//  LuaObjC
-//
 //  Created by Darren Clark on 12-12-25.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
-//
+//  Copyright (c) 2012 Darren Clark. All rights reserved.
+
 
 #import "AppDelegate.h"
+#import "LuaContext.h"
+
+@interface AppDelegate () {
+	LuaContext *luaContext;
+}
+
+@end
 
 @implementation AppDelegate
 
@@ -14,6 +18,7 @@
 
 - (void)dealloc
 {
+	[luaContext release];
 	[_window release];
     [super dealloc];
 }
@@ -24,6 +29,17 @@
     // Override point for customization after application launch.
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
+	
+	luaContext = [[LuaContext alloc] init];
+	
+	NSString *luaFilePath = [[NSBundle mainBundle] pathForResource:@"test" ofType:@"lua"];
+	
+	NSError *error;
+	if (![luaContext doFile:luaFilePath error:&error]) {
+		NSLog(@"Error running '%@': %@", luaFilePath, error.localizedDescription);
+	}
+	
+	
     return YES;
 }
 

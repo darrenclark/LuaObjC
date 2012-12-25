@@ -45,6 +45,8 @@
 		95F67993168A4F81004819EE /* lundump.c in Sources */ = {isa = PBXBuildFile; fileRef = 95F6796E168A4F81004819EE /* lundump.c */; };
 		95F67994168A4F81004819EE /* lvm.c in Sources */ = {isa = PBXBuildFile; fileRef = 95F67970168A4F81004819EE /* lvm.c */; };
 		95F67995168A4F81004819EE /* lzio.c in Sources */ = {isa = PBXBuildFile; fileRef = 95F67972168A4F81004819EE /* lzio.c */; };
+		95F6799A168A5172004819EE /* LuaContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F67999168A5172004819EE /* LuaContext.m */; };
+		95F679A8168A5BDE004819EE /* test.lua in Resources */ = {isa = PBXBuildFile; fileRef = 95F679A7168A5BDE004819EE /* test.lua */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -115,6 +117,9 @@
 		95F67971168A4F81004819EE /* lvm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lvm.h; path = lua/src/lvm.h; sourceTree = "<group>"; };
 		95F67972168A4F81004819EE /* lzio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lzio.c; path = lua/src/lzio.c; sourceTree = "<group>"; };
 		95F67973168A4F81004819EE /* lzio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lzio.h; path = lua/src/lzio.h; sourceTree = "<group>"; };
+		95F67998168A5172004819EE /* LuaContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LuaContext.h; sourceTree = "<group>"; };
+		95F67999168A5172004819EE /* LuaContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LuaContext.m; sourceTree = "<group>"; };
+		95F679A7168A5BDE004819EE /* test.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.lua; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +139,7 @@
 		95F67913168A4DD4004819EE = {
 			isa = PBXGroup;
 			children = (
+				95F67997168A515C004819EE /* LuaObjCLib */,
 				95F67928168A4DD4004819EE /* LuaObjC */,
 				95F67996168A4F8D004819EE /* lua */,
 				95F67921168A4DD4004819EE /* Frameworks */,
@@ -176,6 +182,7 @@
 				95F6792B168A4DD4004819EE /* InfoPlist.strings */,
 				95F6792E168A4DD4004819EE /* main.m */,
 				95F67930168A4DD4004819EE /* LuaObjC-Prefix.pch */,
+				95F679A7168A5BDE004819EE /* test.lua */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -244,6 +251,15 @@
 			name = lua;
 			sourceTree = "<group>";
 		};
+		95F67997168A515C004819EE /* LuaObjCLib */ = {
+			isa = PBXGroup;
+			children = (
+				95F67998168A5172004819EE /* LuaContext.h */,
+				95F67999168A5172004819EE /* LuaContext.m */,
+			);
+			path = LuaObjCLib;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -295,6 +311,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				95F6792D168A4DD4004819EE /* InfoPlist.strings in Resources */,
+				95F679A8168A5BDE004819EE /* test.lua in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -339,6 +356,7 @@
 				95F67993168A4F81004819EE /* lundump.c in Sources */,
 				95F67994168A4F81004819EE /* lvm.c in Sources */,
 				95F67995168A4F81004819EE /* lzio.c in Sources */,
+				95F6799A168A5172004819EE /* LuaContext.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
