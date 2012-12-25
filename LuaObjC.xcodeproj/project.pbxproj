@@ -1,0 +1,261 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		95F67923168A4DD4004819EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67922168A4DD4004819EE /* UIKit.framework */; };
+		95F67925168A4DD4004819EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67924168A4DD4004819EE /* Foundation.framework */; };
+		95F67927168A4DD4004819EE /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67926168A4DD4004819EE /* CoreGraphics.framework */; };
+		95F6792D168A4DD4004819EE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 95F6792B168A4DD4004819EE /* InfoPlist.strings */; };
+		95F6792F168A4DD4004819EE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F6792E168A4DD4004819EE /* main.m */; };
+		95F67933168A4DD4004819EE /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F67932168A4DD4004819EE /* AppDelegate.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		95F6791E168A4DD4004819EE /* LuaObjC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LuaObjC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		95F67922168A4DD4004819EE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		95F67924168A4DD4004819EE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		95F67926168A4DD4004819EE /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		95F6792A168A4DD4004819EE /* LuaObjC-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "LuaObjC-Info.plist"; sourceTree = "<group>"; };
+		95F6792C168A4DD4004819EE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		95F6792E168A4DD4004819EE /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		95F67930168A4DD4004819EE /* LuaObjC-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LuaObjC-Prefix.pch"; sourceTree = "<group>"; };
+		95F67931168A4DD4004819EE /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		95F67932168A4DD4004819EE /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		95F6791B168A4DD4004819EE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				95F67923168A4DD4004819EE /* UIKit.framework in Frameworks */,
+				95F67925168A4DD4004819EE /* Foundation.framework in Frameworks */,
+				95F67927168A4DD4004819EE /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		95F67913168A4DD4004819EE = {
+			isa = PBXGroup;
+			children = (
+				95F67928168A4DD4004819EE /* LuaObjC */,
+				95F67921168A4DD4004819EE /* Frameworks */,
+				95F6791F168A4DD4004819EE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		95F6791F168A4DD4004819EE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				95F6791E168A4DD4004819EE /* LuaObjC.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		95F67921168A4DD4004819EE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				95F67922168A4DD4004819EE /* UIKit.framework */,
+				95F67924168A4DD4004819EE /* Foundation.framework */,
+				95F67926168A4DD4004819EE /* CoreGraphics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		95F67928168A4DD4004819EE /* LuaObjC */ = {
+			isa = PBXGroup;
+			children = (
+				95F67931168A4DD4004819EE /* AppDelegate.h */,
+				95F67932168A4DD4004819EE /* AppDelegate.m */,
+				95F67929168A4DD4004819EE /* Supporting Files */,
+			);
+			path = LuaObjC;
+			sourceTree = "<group>";
+		};
+		95F67929168A4DD4004819EE /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				95F6792A168A4DD4004819EE /* LuaObjC-Info.plist */,
+				95F6792B168A4DD4004819EE /* InfoPlist.strings */,
+				95F6792E168A4DD4004819EE /* main.m */,
+				95F67930168A4DD4004819EE /* LuaObjC-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		95F6791D168A4DD4004819EE /* LuaObjC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95F67936168A4DD4004819EE /* Build configuration list for PBXNativeTarget "LuaObjC" */;
+			buildPhases = (
+				95F6791A168A4DD4004819EE /* Sources */,
+				95F6791B168A4DD4004819EE /* Frameworks */,
+				95F6791C168A4DD4004819EE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LuaObjC;
+			productName = LuaObjC;
+			productReference = 95F6791E168A4DD4004819EE /* LuaObjC.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		95F67915168A4DD4004819EE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0430;
+			};
+			buildConfigurationList = 95F67918168A4DD4004819EE /* Build configuration list for PBXProject "LuaObjC" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 95F67913168A4DD4004819EE;
+			productRefGroup = 95F6791F168A4DD4004819EE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				95F6791D168A4DD4004819EE /* LuaObjC */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		95F6791C168A4DD4004819EE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				95F6792D168A4DD4004819EE /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		95F6791A168A4DD4004819EE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				95F6792F168A4DD4004819EE /* main.m in Sources */,
+				95F67933168A4DD4004819EE /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		95F6792B168A4DD4004819EE /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				95F6792C168A4DD4004819EE /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		95F67934168A4DD4004819EE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		95F67935168A4DD4004819EE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		95F67937168A4DD4004819EE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "LuaObjC/LuaObjC-Prefix.pch";
+				INFOPLIST_FILE = "LuaObjC/LuaObjC-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		95F67938168A4DD4004819EE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "LuaObjC/LuaObjC-Prefix.pch";
+				INFOPLIST_FILE = "LuaObjC/LuaObjC-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		95F67918168A4DD4004819EE /* Build configuration list for PBXProject "LuaObjC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				95F67934168A4DD4004819EE /* Debug */,
+				95F67935168A4DD4004819EE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		95F67936168A4DD4004819EE /* Build configuration list for PBXNativeTarget "LuaObjC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				95F67937168A4DD4004819EE /* Debug */,
+				95F67938168A4DD4004819EE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 95F67915168A4DD4004819EE /* Project object */;
+}
