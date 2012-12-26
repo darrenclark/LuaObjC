@@ -32,6 +32,7 @@ static int obj_call_method(lua_State *L);
 // Utility methods
 static method_info lookup_method(const char *str, size_t len, id target);
 static BOOL is_class(id object);
+static const char *arg_encoding_skip_type_qualifiers(const char *encoding);
 
 
 void luaobjc_object_open(lua_State *L) {
@@ -142,8 +143,120 @@ static int obj_call_method(lua_State *L) {
 	[invocation setArgument:&sel atIndex:1];
 	[invocation invoke];
 	
-	// TODO: return values to lua
-	return 0;
+	char return_type_buf[256];
+	if (info->method) {
+		method_getReturnType(info->method, return_type_buf, 256);
+	} else {
+		strncpy(return_type_buf, [methodSig methodReturnType], 256);
+	}
+	
+	const char *return_type = arg_encoding_skip_type_qualifiers(return_type_buf);
+	
+	switch (return_type[0]) {
+		case 'c': {
+			char val;
+			[invocation getReturnValue:&val];
+			// since BOOL is a signed char, we can assume that if it is 0 or 1,
+			// we'll just return a boolean.
+			if (val == NO || val == YES) {
+				lua_pushboolean(L, val);
+			} else {
+				lua_pushnumber(L, val);
+			}
+		} break;
+		case 'i': {
+			int val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 's': {
+			short val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'l': {
+			long val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'q': {
+			long long val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'C': {
+			unsigned char val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'I': {
+			unsigned int val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'S': {
+			unsigned short val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'L': {
+			unsigned long val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'Q': {
+			unsigned long long val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'f': {
+			float val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'd': {
+			double val;
+			[invocation getReturnValue:&val];
+			lua_pushnumber(L, val);
+		} break;
+		case 'B': {
+			_Bool val;
+			[invocation getReturnValue:&val];
+			lua_pushboolean(L, val);
+		} break;
+		case 'v': return 0;
+		case '*': { // NOTE: see default case, as this doesn't seem to actually be used for char*
+			const char *str;
+			[invocation getReturnValue:&str];
+			if (str == NULL)
+				lua_pushnil(L);
+			else
+				lua_pushstring(L, str);
+		} break;
+		case '@': // Both objects and classes are treated they same by us
+		case '#': {
+			id val;
+			[invocation getReturnValue:&val];
+			luaobjc_object_push(L, val);
+		} break;
+		default: {
+			// if it is a char * string
+			if (return_type[0] == '^' && (return_type[1] == 'c' || return_type[1] == 'C')) {
+				const char *str;
+				[invocation getReturnValue:&str];
+				if (str == NULL)
+					lua_pushnil(L);
+				else
+					lua_pushstring(L, str);
+				return 1;
+			}
+			
+			// TODO: handle other types like SEL, structs, unions, pointers, etc...
+			return 0;
+		}
+	}
+	
+	return 1;
 }
 
 // Gets a method_info from a target object & lua string
@@ -224,4 +337,27 @@ static BOOL is_class(id object) {
 	Class cls = object_getClass(object);
 	// since the Class of a class is a metaclass, we can just check for that.
 	return class_isMetaClass(cls);
+}
+
+// Returns a pointer to the character after type qualifiers have been skipped
+static const char *arg_encoding_skip_type_qualifiers(const char *encoding) {	
+	const char *index = encoding;
+	while (*index != '\0') {
+		char ch = *index;
+		switch (ch) {
+		case 'r':
+		case 'R':
+		case 'o':
+		case 'O':
+		case 'n':
+		case 'N':
+		case 'V':
+			index++;
+			break;
+		default:
+			return index;
+		}
+	}
+	
+	return NULL;
 }

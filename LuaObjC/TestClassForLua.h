@@ -10,4 +10,23 @@
 
 + (void)testMethod;
 
+- (BOOL)boolTest;
+- (int)intTest;
+- (short)shortTest;
+- (long)longTest;
+- (long long)longLongTest;
+- (unsigned char)unsignedCharTest;
+- (unsigned int)unsignedIntTest;
+- (unsigned short)unsignedShortTest;
+- (unsigned long)unsignedLongTest;
+- (unsigned long long)unsignedLongLongTest;
+- (float)floatTest;
+- (double)doubleTest;
+- (_Bool)cBoolTest;
+- (void)voidTest;
+- (char *)charStringTest;
+- (const char *)constCharStringTest;
+- (id)objectTest;
+- (Class)classTest;
+
 @end
