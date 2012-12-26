@@ -175,11 +175,29 @@ static int obj_call_method(lua_State *L) {
 	[invocation setArgument:&sel atIndex:1];
 	
 	// Handle arguments from Lua
-	
-	// TODO: Get commented code working
-	//if (info->method) {
-	//	const char *type_encoding = method_getTypeEncoding(info->method);
-	//} else {
+	if (info->method) {
+		const char *type_encoding = method_getTypeEncoding(info->method);
+		const char *current_pos = type_encoding;
+		int current_arg = -1; // since the return value is at the start
+		for (;;) {
+			// Handle argument
+			if (current_arg >= 2) {
+				convert_lua_arg(L, current_arg, invocation, current_arg, current_pos);
+			}
+			
+			// Move to next argument
+			current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
+			// since method_getTypeEncoding includes what seems like offsets/stack sizes/somethings
+			// after each arg, we need to skip over them
+			while (current_pos[0] != '\0' && current_pos[0] >= '0' && current_pos[0] <= '9')
+				current_pos++;
+			
+			if (current_pos[0] == '\0') // reached end of args
+				break;
+			
+			current_arg++;
+		}
+	} else {
 		NSUInteger arg_count = [methodSig numberOfArguments];
 		// we start at 2 because target/selector are args 0/1. luckily, since
 		// Lua starts counting at 1 and our first arg is the target, the NSInvocation
@@ -189,15 +207,15 @@ static int obj_call_method(lua_State *L) {
 			convert_lua_arg(L, current_arg, invocation, current_arg, 
 							[methodSig getArgumentTypeAtIndex:current_arg]);
 		}
-	//}
+	}
 	
 	[invocation invoke];
 	
 	// Read the return type information
 	if (info->method) {
-		method_getReturnType(info->method, arg_buf, 256);
+		method_getReturnType(info->method, arg_buf, arg_buf_len);
 	} else {
-		strncpy(arg_buf, [methodSig methodReturnType], 256);
+		strncpy(arg_buf, [methodSig methodReturnType], arg_buf_len);
 	}
 	
 	const char *return_type = arg_encoding_skip_type_qualifiers(arg_buf);
