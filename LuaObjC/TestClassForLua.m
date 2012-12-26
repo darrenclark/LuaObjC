@@ -10,6 +10,18 @@
 	NSLog(@"+testMethod called!");
 }
 
+- (CGRect)testStruct {
+	return CGRectMake(1, 2, 3, 4);
+}
+
+- (SEL)testSelector {
+	return @selector(testSelectorPt2);
+}
+
+- (void)testSelectorPt2 {
+	NSLog(@"testSelectorPt2 called!");
+}
+
 
 + (BOOL)respondsToSelector:(SEL)aSelector {
 	if ([NSStringFromSelector(aSelector) isEqualToString:@"dynamicMethod"])

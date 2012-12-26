@@ -48,5 +48,12 @@ for i, methodName in ipairs(returnTestMethods) do
 	print(methodName, type(ret), ret)
 end
 
+-- Struct tests
+printHeader("'Unknown' tests")
+local cgRect = testClassInstance:testStruct()
+print(cgRect, getmetatable(cgRect))
+local sel = testClassInstance:testSelector()
+print(sel, getmetatable(sel))
+
 -- End
 printHeader("... Done tests")

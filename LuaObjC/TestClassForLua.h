@@ -9,6 +9,9 @@
 @interface TestClassForLua : NSObject
 
 + (void)testMethod;
+- (CGRect)testStruct;
+- (SEL)testSelector;
+- (void)testSelectorPt2;
 
 - (BOOL)boolTest;
 - (int)intTest;

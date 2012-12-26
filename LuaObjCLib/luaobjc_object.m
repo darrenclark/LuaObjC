@@ -5,7 +5,8 @@
 #import "luaobjc_object.h"
 #import <objc/runtime.h>
 
-#define METATABLE_NAME "luaobjc_object_mt"
+#define OBJECT_MT	"luaobjc_object_mt"
+#define UNKNOWN_MT	"luaobjc_unknown_mt"
 
 
 typedef struct method_info {
@@ -39,13 +40,18 @@ void luaobjc_object_open(lua_State *L) {
 	// 'objc' global is already on the stack! be sure to leave it at the top
 	// when this function returns!
 	
-	luaL_newmetatable(L, METATABLE_NAME);
+	luaL_newmetatable(L, OBJECT_MT);
 	
 	lua_pushstring(L, "__index");
 	lua_pushcfunction(L, obj_index);
 	lua_settable(L, -3);
 	
 	lua_pop(L, 1); // pop metatable
+	
+	
+	luaL_newmetatable(L, UNKNOWN_MT);
+	lua_pop(L, 1);
+	
 	
 	lua_pushstring(L, "class");
 	lua_pushcfunction(L, get_class);
@@ -69,7 +75,7 @@ void luaobjc_object_push(lua_State *L, id object) {
 		lua_pushstring(L, [object UTF8String]);
 	} else {
 		lua_pushlightuserdata(L, object);
-		luaL_setmetatable(L, METATABLE_NAME);
+		luaL_setmetatable(L, OBJECT_MT);
 	}
 }
 
@@ -78,12 +84,12 @@ void luaobjc_object_push_strict(lua_State *L, id object) {
 		lua_pushnil(L);
 	} else {
 		lua_pushlightuserdata(L, object);
-		luaL_setmetatable(L, METATABLE_NAME);
+		luaL_setmetatable(L, OBJECT_MT);
 	}
 }
 
 id luaobjc_object_check(lua_State *L, int idx) {
-	void *object = luaL_checkudata(L, idx, METATABLE_NAME);
+	void *object = luaL_checkudata(L, idx, OBJECT_MT);
 	luaL_argcheck(L, object != NULL, idx, "Objective C object expected");
 	return (id)object;
 }
@@ -91,9 +97,31 @@ id luaobjc_object_check(lua_State *L, int idx) {
 id luaobjc_object_check_or_nil(lua_State *L, int idx) {
 	if (lua_isnil(L, idx))
 		return nil;
-	void *object = luaL_checkudata(L, idx, METATABLE_NAME);
+	void *object = luaL_checkudata(L, idx, OBJECT_MT);
 	luaL_argcheck(L, object != NULL, idx, "Objective C object (or nil) expected");
 	return (id)object;
+}
+
+
+void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len) {
+	size_t *userdata = (size_t *)lua_newuserdata(L, sizeof(size_t) + len);
+	luaL_setmetatable(L, UNKNOWN_MT);
+	userdata[0] = len;
+	memcpy(userdata + 1, bytes, len);
+}
+
+luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size_t len) {
+	size_t *userdata = luaL_checkudata(L, idx, UNKNOWN_MT);
+	luaL_argcheck(L, userdata != NULL, idx, "Objective C 'unknown' expected.");
+	
+	luaobjc_unknown unknown;
+	unknown.length = userdata[0];
+	unknown.bytes = (void *)(userdata + 1);
+	
+	if (len > 0)
+		luaL_argcheck(L, len == unknown.length, idx, "Objective C 'unknown' length incorrect.");
+	
+	return unknown;
 }
 
 
@@ -240,19 +268,13 @@ static int obj_call_method(lua_State *L) {
 			luaobjc_object_push(L, val);
 		} break;
 		default: {
-			// if it is a char * string
-			if (return_type[0] == '^' && (return_type[1] == 'c' || return_type[1] == 'C')) {
-				const char *str;
-				[invocation getReturnValue:&str];
-				if (str == NULL)
-					lua_pushnil(L);
-				else
-					lua_pushstring(L, str);
-				return 1;
-			}
+			NSUInteger unknown_size;
+			NSGetSizeAndAlignment(return_type, &unknown_size, NULL);
 			
-			// TODO: handle other types like SEL, structs, unions, pointers, etc...
-			return 0;
+			char buffer[unknown_size];
+			[invocation getReturnValue:&buffer];
+			
+			luaobjc_unknown_push(L, buffer, unknown_size);
 		}
 	}
 	
