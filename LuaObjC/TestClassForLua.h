@@ -17,6 +17,8 @@
 - (SEL)testSelector;
 - (void)testSelectorPt2;
 
+- (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method;
+
 - (BOOL)boolTest;
 - (int)intTest;
 - (short)shortTest;

@@ -30,6 +30,7 @@
 	NSLog(@"testSelectorPt2 called!");
 }
 
+- (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method { return a; }
 
 + (BOOL)respondsToSelector:(SEL)aSelector {
 	if ([NSStringFromSelector(aSelector) isEqualToString:@"dynamicMethod"])

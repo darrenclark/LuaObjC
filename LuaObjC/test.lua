@@ -52,8 +52,25 @@ end
 printHeader("'Unknown' tests")
 local cgRect = testClassInstance:testStruct()
 testClassInstance:testStructPt2(cgRect)
-local sel = testClassInstance:testSelector()
-testClassInstance:performSelector(sel)
+
+-- Disabled because on ARM performSelector w/ a method returning void gives a
+-- gibberish value
+--
+--local sel = testClassInstance:testSelector()
+--testClassInstance:performSelector(sel)
+
+-- Benchmarks
+printHeader("Benchmarks")
+
+for j = 1, 5 do
+	collectgarbage("stop")
+	objc.benchmark_start("Func call speed")
+	for i = 0, 1000 do
+		testClassInstance:a_benchmark_method(i, true, 56.6)
+	end
+	objc.benchmark_end("Func call speed")
+	collectgarbage("collect")
+end
 
 -- End
 printHeader("... Done tests")
