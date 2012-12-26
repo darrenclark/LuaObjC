@@ -9,7 +9,11 @@
 @interface TestClassForLua : NSObject
 
 + (void)testMethod;
+
+- (void)testInstanceMethod:(NSString *)string;
+
 - (CGRect)testStruct;
+- (void)testStructPt2:(CGRect)rect;
 - (SEL)testSelector;
 - (void)testSelectorPt2;
 

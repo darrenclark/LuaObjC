@@ -18,7 +18,7 @@ testClass:dynamicMethod()
 
 local testClassInstance = testClass:alloc():init()
 print(testClassInstance, testClassInstance:description())
-
+testClassInstance:testInstanceMethod("Woot!")
 
 -- Test return values
 printHeader("Test return values")
@@ -51,9 +51,9 @@ end
 -- Struct tests
 printHeader("'Unknown' tests")
 local cgRect = testClassInstance:testStruct()
-print(cgRect, getmetatable(cgRect))
+testClassInstance:testStructPt2(cgRect)
 local sel = testClassInstance:testSelector()
-print(sel, getmetatable(sel))
+testClassInstance:performSelector(sel)
 
 -- End
 printHeader("... Done tests")

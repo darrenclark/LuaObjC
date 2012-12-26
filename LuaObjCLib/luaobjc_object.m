@@ -32,6 +32,8 @@ static int obj_call_method(lua_State *L);
 
 // Utility methods
 static method_info lookup_method(const char *str, size_t len, id target);
+static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
+							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
 static const char *arg_encoding_skip_type_qualifiers(const char *encoding);
 
@@ -156,30 +158,51 @@ static int obj_index(lua_State *L) {
 }
 
 static int obj_call_method(lua_State *L) {
+	const int arg_buf_len = 1024;
+	char arg_buf[arg_buf_len];
+	
 	method_info *info = (method_info *)lua_touserdata(L, lua_upvalueindex(1));
 	
 	id target = info->target;
 	SEL sel = info->selector;
 	
-	// TODO: read arguments from Lua
 	// TODO: use objc_msgSend directly when possible
 	
 	NSMethodSignature *methodSig = [target methodSignatureForSelector:sel];
-	
 	NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSig];
+	
 	[invocation setArgument:&target atIndex:0];
 	[invocation setArgument:&sel atIndex:1];
+	
+	// Handle arguments from Lua
+	
+	// TODO: Get commented code working
+	//if (info->method) {
+	//	const char *type_encoding = method_getTypeEncoding(info->method);
+	//} else {
+		NSUInteger arg_count = [methodSig numberOfArguments];
+		// we start at 2 because target/selector are args 0/1. luckily, since
+		// Lua starts counting at 1 and our first arg is the target, the NSInvocation
+		// and Lua arg indexes line up perfectly!
+		NSUInteger current_arg = 2;
+		for (; current_arg < arg_count; current_arg++) {
+			convert_lua_arg(L, current_arg, invocation, current_arg, 
+							[methodSig getArgumentTypeAtIndex:current_arg]);
+		}
+	//}
+	
 	[invocation invoke];
 	
-	char return_type_buf[256];
+	// Read the return type information
 	if (info->method) {
-		method_getReturnType(info->method, return_type_buf, 256);
+		method_getReturnType(info->method, arg_buf, 256);
 	} else {
-		strncpy(return_type_buf, [methodSig methodReturnType], 256);
+		strncpy(arg_buf, [methodSig methodReturnType], 256);
 	}
 	
-	const char *return_type = arg_encoding_skip_type_qualifiers(return_type_buf);
+	const char *return_type = arg_encoding_skip_type_qualifiers(arg_buf);
 	
+	// Return (possibly) a value to Lua
 	switch (return_type[0]) {
 		case 'c': {
 			char val;
@@ -253,7 +276,7 @@ static int obj_call_method(lua_State *L) {
 			lua_pushboolean(L, val);
 		} break;
 		case 'v': return 0;
-		case '*': { // NOTE: see default case, as this doesn't seem to actually be used for char*
+		case '*': {
 			const char *str;
 			[invocation getReturnValue:&str];
 			if (str == NULL)
@@ -352,6 +375,127 @@ static method_info lookup_method(const char *str, size_t len, id target) {
 	info.method = m;
 	return info;
 }
+
+// converts an arg from from the lua value at lua_idx into the argument at invocation_idx
+// in invocation
+static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
+	int invocation_idx, const char *encoding) {
+	
+	encoding = arg_encoding_skip_type_qualifiers(encoding);
+	
+	switch (encoding[0]) {
+		case 'c': {
+			char val;
+			if (lua_isboolean(L, lua_idx)) {
+				val = lua_toboolean(L, lua_idx);
+			} else {
+				val = luaL_checknumber(L, lua_idx);
+			}
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'i': {
+			int val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 's': {
+			short val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'l': {
+			long val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'q': {
+			long long val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'C': {
+			unsigned char val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'I': {
+			unsigned int val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'S': {
+			unsigned short val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'L': {
+			unsigned long val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'Q': {
+			unsigned long long val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'f': {
+			float val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'd': {
+			double val = luaL_checknumber(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'B': {
+			luaL_argcheck(L, lua_isboolean(L, lua_idx), lua_idx, "`boolean' expected");
+			_Bool val = lua_toboolean(L, lua_idx);
+			[invocation setArgument:&val atIndex:invocation_idx];
+		} break;
+		case 'v': break;
+		case '*': {
+			BOOL isstring = lua_isstring(L, lua_idx);
+			BOOL isnil = lua_isnil(L, lua_idx);
+			luaL_argcheck(L, isstring || isnil, lua_idx, "`string' expected");
+			
+			const char *str = NULL;
+			if (isstring)
+				str = lua_tostring(L, lua_idx);
+			[invocation setArgument:&str atIndex:invocation_idx];
+		} break;
+		case '@': // Both objects and classes are treated they same by us
+		case '#': {
+			// Auto convert some Lua values into Objective C values
+			if (lua_isnumber(L, lua_idx)) {
+				double val = lua_tonumber(L, lua_idx);
+				
+				NSNumber *number = (NSNumber *)CFNumberCreate(kCFAllocatorDefault,
+															  kCFNumberDoubleType, &val);
+				[number autorelease];
+				
+				[invocation setArgument:&number atIndex:invocation_idx];
+			} else if (lua_isboolean(L, lua_idx)) {
+				int val = lua_toboolean(L, lua_idx);
+				
+				NSNumber *number = (NSNumber *)CFNumberCreate(kCFAllocatorDefault,
+															  kCFNumberIntType, &val);
+				[number autorelease];
+				
+				[invocation setArgument:&number atIndex:invocation_idx];
+			} else if (lua_isstring(L, lua_idx)) {
+				const char *str = lua_tolstring(L, lua_idx, NULL);
+				NSString *objc_str = [NSString stringWithUTF8String:str];
+				[invocation setArgument:&objc_str atIndex:invocation_idx];
+			} else {
+				id val = luaobjc_object_check_or_nil(L, lua_idx);
+				[invocation setArgument:&val atIndex:invocation_idx];
+			}
+		} break;
+		default: {
+			if (encoding[0] == '^' && lua_isnil(L, lua_idx)) {
+				void *val = NULL;
+				[invocation setArgument:val atIndex:invocation_idx];
+			} else {
+				NSUInteger arg_size;
+				NSGetSizeAndAlignment(encoding, &arg_size, NULL);
+				
+				luaobjc_unknown unknown = luaobjc_unknown_check(L, lua_idx, arg_size);
+				[invocation setArgument:unknown.bytes atIndex:invocation_idx];
+			}
+		}
+	}
+}
+
 
 // Checks whether object is a Class. This is used for determining whether class_getClassMethod
 // or class_getInstanceMethod should be called.

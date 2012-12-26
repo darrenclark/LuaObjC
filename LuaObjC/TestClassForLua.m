@@ -10,8 +10,16 @@
 	NSLog(@"+testMethod called!");
 }
 
+- (void)testInstanceMethod:(NSString *)string {
+	NSLog(@"-testInstanceMethod: says: %@", string);
+}
+
 - (CGRect)testStruct {
 	return CGRectMake(1, 2, 3, 4);
+}
+
+- (void)testStructPt2:(CGRect)rect {
+	NSLog(@"testStructPt2: %@", NSStringFromCGRect(rect));
 }
 
 - (SEL)testSelector {
