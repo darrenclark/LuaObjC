@@ -16,8 +16,10 @@ typedef struct method_info {
 
 static const method_info invalid_method_info = { NULL, NULL, NULL };
 
+// a valid method_info is one with at least target & selector != NULL. If
+// method is NULL, it just forces us to use the slower way to invoke the method
 static inline BOOL method_info_is_valid(method_info info) {
-	return info.target != NULL && info.selector != NULL && info.method != NULL;
+	return info.target != NULL && info.selector != NULL;
 }
 
 
@@ -181,23 +183,37 @@ static method_info lookup_method(const char *str, size_t len, id target) {
 	Class target_class = is_class(target) ? NULL : object_getClass(target);
 	
 	SEL sel = sel_getUid(transformed);
+	SEL fallback_sel = NULL;
+	
 	Method m = target_class ? class_getInstanceMethod(target_class, sel) : class_getClassMethod(target, sel);
 	if (m == NULL && !has_args) {
 		// Try again by adding one arg to the end
 		transformed[len] = ':';
-		sel = sel_getUid(transformed);
-		m = target_class ? class_getInstanceMethod(target_class, sel) : class_getClassMethod(target, sel);
+		fallback_sel = sel_getUid(transformed);
+		m = target_class ? class_getInstanceMethod(target_class, fallback_sel) : class_getClassMethod(target, fallback_sel);
 	}
 	
-	// TODO: Test if dynamic methods via -forwardInvocation: work with this, or if
-	// additional handling is required...
 	if (m == NULL) {
+		// We can still see if the method is handled via forwardInvocation:
+		BOOL sel_worked = [target respondsToSelector:sel];
+		BOOL fallback_worked = NO;
+		if (!sel_worked)
+			fallback_worked = [target respondsToSelector:fallback_sel];
+		
+		if (sel_worked || fallback_worked) {
+			method_info mi;
+			mi.target = target;
+			mi.selector = sel_worked ? sel : fallback_sel;
+			mi.method = NULL;
+			return mi;
+		}
+		
 		return invalid_method_info;
 	}
 	
 	method_info info;
 	info.target = target;
-	info.selector = sel;
+	info.selector = fallback_sel == NULL ? sel : fallback_sel;
 	info.method = m;
 	return info;
 }

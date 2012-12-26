@@ -5,3 +5,4 @@ print("NSString:", NSString, "metatable:", getmetatable(NSString))
 
 local testClass = objc.class("TestClassForLua")
 testClass:testMethod()
+testClass:dynamicMethod()
