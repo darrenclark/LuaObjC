@@ -49,6 +49,7 @@
 		95F679A8168A5BDE004819EE /* test.lua in Resources */ = {isa = PBXBuildFile; fileRef = 95F679A7168A5BDE004819EE /* test.lua */; };
 		95F679AB168A5C2C004819EE /* luaobjc_object.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F679AA168A5C2C004819EE /* luaobjc_object.m */; };
 		95F679AE168A5C56004819EE /* luaobjc.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F679AD168A5C56004819EE /* luaobjc.m */; };
+		95F679BA168A643B004819EE /* TestClassForLua.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F679B9168A643B004819EE /* TestClassForLua.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -126,6 +127,8 @@
 		95F679AA168A5C2C004819EE /* luaobjc_object.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_object.m; sourceTree = "<group>"; };
 		95F679AC168A5C56004819EE /* luaobjc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc.h; sourceTree = "<group>"; };
 		95F679AD168A5C56004819EE /* luaobjc.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc.m; sourceTree = "<group>"; };
+		95F679B8168A643B004819EE /* TestClassForLua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestClassForLua.h; sourceTree = "<group>"; };
+		95F679B9168A643B004819EE /* TestClassForLua.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestClassForLua.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -176,6 +179,8 @@
 			children = (
 				95F67931168A4DD4004819EE /* AppDelegate.h */,
 				95F67932168A4DD4004819EE /* AppDelegate.m */,
+				95F679B8168A643B004819EE /* TestClassForLua.h */,
+				95F679B9168A643B004819EE /* TestClassForLua.m */,
 				95F67929168A4DD4004819EE /* Supporting Files */,
 			);
 			path = LuaObjC;
@@ -369,6 +374,7 @@
 				95F6799A168A5172004819EE /* LuaContext.m in Sources */,
 				95F679AB168A5C2C004819EE /* luaobjc_object.m in Sources */,
 				95F679AE168A5C56004819EE /* luaobjc.m in Sources */,
+				95F679BA168A643B004819EE /* TestClassForLua.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
