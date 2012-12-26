@@ -44,7 +44,7 @@ local returnTestMethods = {
 }
 
 for i, methodName in ipairs(returnTestMethods) do
-	local ret = testClassInstance[methodName]()
+	local ret = testClassInstance[methodName](testClassInstance)
 	print(methodName, type(ret), ret)
 end
 
