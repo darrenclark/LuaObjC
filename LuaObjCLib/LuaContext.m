@@ -36,7 +36,7 @@ NSString *LuaContextErrorDomain = @"LuaContextError";
 
 - (BOOL)doFile:(NSString *)fullPath error:(NSError **)error {
 	int ret = luaL_loadfile(lua_, [fullPath UTF8String]);
-	if (ret != LUA_OK) {
+	if (ret != 0) {
 		if (error != NULL)
 			*error = [self readLuaError:ret];
 		lua_pop(lua_, 1);
@@ -44,7 +44,7 @@ NSString *LuaContextErrorDomain = @"LuaContextError";
 	}
 	
 	ret = lua_pcall(lua_, 0, 0, 0);
-	if (ret != LUA_OK) {
+	if (ret != 0) {
 		if (error != NULL)
 			*error = [self readLuaError:ret];
 		lua_pop(lua_, 1);

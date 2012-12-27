@@ -79,7 +79,8 @@ void luaobjc_object_push(lua_State *L, id object) {
 		lua_pushstring(L, [object UTF8String]);
 	} else {
 		lua_pushlightuserdata(L, object);
-		luaL_setmetatable(L, OBJECT_MT);
+		luaL_getmetatable(L, OBJECT_MT);
+		lua_setmetatable(L, -2);
 	}
 }
 
@@ -88,7 +89,8 @@ void luaobjc_object_push_strict(lua_State *L, id object) {
 		lua_pushnil(L);
 	} else {
 		lua_pushlightuserdata(L, object);
-		luaL_setmetatable(L, OBJECT_MT);
+		luaL_getmetatable(L, OBJECT_MT);
+		lua_setmetatable(L, -2);
 	}
 }
 
@@ -109,7 +111,9 @@ id luaobjc_object_check_or_nil(lua_State *L, int idx) {
 
 void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len) {
 	size_t *userdata = (size_t *)lua_newuserdata(L, sizeof(size_t) + len);
-	luaL_setmetatable(L, UNKNOWN_MT);
+	luaL_getmetatable(L, UNKNOWN_MT);
+	lua_setmetatable(L, -2);
+	
 	userdata[0] = len;
 	memcpy(userdata + 1, bytes, len);
 }
