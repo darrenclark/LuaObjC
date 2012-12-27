@@ -32,15 +32,19 @@
 	
 	luaContext = [[LuaContext alloc] init];
 	
-	NSString *luaFilePath = [[NSBundle mainBundle] pathForResource:@"test" ofType:@"lua"];
 	
+	[self performSelector:@selector(runLuaTests) withObject:nil afterDelay:0.5];
+	
+    return YES;
+}
+
+- (void)runLuaTests {
+	NSString *luaFilePath = [[NSBundle mainBundle] pathForResource:@"test" ofType:@"lua"];
+
 	NSError *error;
 	if (![luaContext doFile:luaFilePath error:&error]) {
 		NSLog(@"Error running '%@': %@", luaFilePath, error.localizedDescription);
 	}
-	
-	
-    return YES;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
