@@ -46,7 +46,7 @@ void luaobjc_object_open(lua_State *L) {
 	// 'objc' global is already on the stack! be sure to leave it at the top
 	// when this function returns!
 	
-	luaL_newmetatable(L, OBJECT_MT);
+	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 	
 	lua_pushstring(L, "__index");
 	lua_pushcfunction(L, obj_index);
@@ -55,7 +55,7 @@ void luaobjc_object_open(lua_State *L) {
 	lua_pop(L, 1); // pop metatable
 	
 	
-	luaL_newmetatable(L, UNKNOWN_MT);
+	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
 	lua_pop(L, 1);
 	
 	
@@ -81,7 +81,7 @@ void luaobjc_object_push(lua_State *L, id object) {
 		lua_pushstring(L, [object UTF8String]);
 	} else {
 		lua_pushlightuserdata(L, object);
-		luaL_getmetatable(L, OBJECT_MT);
+		LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 		lua_setmetatable(L, -2);
 	}
 }
@@ -91,13 +91,13 @@ void luaobjc_object_push_strict(lua_State *L, id object) {
 		lua_pushnil(L);
 	} else {
 		lua_pushlightuserdata(L, object);
-		luaL_getmetatable(L, OBJECT_MT);
+		LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 		lua_setmetatable(L, -2);
 	}
 }
 
 id luaobjc_object_check(lua_State *L, int idx) {
-	void *object = luaL_checkudata(L, idx, OBJECT_MT);
+	void *object = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 	luaL_argcheck(L, object != NULL, idx, "Objective C object expected");
 	return (id)object;
 }
@@ -105,7 +105,7 @@ id luaobjc_object_check(lua_State *L, int idx) {
 id luaobjc_object_check_or_nil(lua_State *L, int idx) {
 	if (lua_isnil(L, idx))
 		return nil;
-	void *object = luaL_checkudata(L, idx, OBJECT_MT);
+	void *object = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 	luaL_argcheck(L, object != NULL, idx, "Objective C object (or nil) expected");
 	return (id)object;
 }
@@ -113,7 +113,7 @@ id luaobjc_object_check_or_nil(lua_State *L, int idx) {
 
 void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len) {
 	size_t *userdata = (size_t *)lua_newuserdata(L, sizeof(size_t) + len);
-	luaL_getmetatable(L, UNKNOWN_MT);
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
 	lua_setmetatable(L, -2);
 	
 	userdata[0] = len;
@@ -121,7 +121,7 @@ void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len) {
 }
 
 luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size_t len) {
-	size_t *userdata = luaL_checkudata(L, idx, UNKNOWN_MT);
+	size_t *userdata = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
 	luaL_argcheck(L, userdata != NULL, idx, "Objective C 'unknown' expected.");
 	
 	luaobjc_unknown unknown;

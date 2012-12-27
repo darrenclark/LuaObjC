@@ -20,3 +20,33 @@ void luaobjc_open(lua_State *L) {
 	
 	lua_pop(L, 1); // pop 'objc' global
 }
+
+void *luaobjc_checkudata(lua_State *L, int ud, int ref, const char *tname) {
+#ifndef LUAOBJC_DISABLE_FAST_LOOKUPS
+	
+	// Based heavily on luaL_checkudata
+	
+	void *p = lua_touserdata(L, ud);
+	if (p != NULL) {  /* value is a userdata? */
+		if (lua_getmetatable(L, ud)) {  /* does it have a metatable? */
+			LUAOBJC_GET_REGISTRY_TABLE(L, ref, tname);  /* get correct metatable */
+			if (!lua_rawequal(L, -1, -2))  /* not the same? */
+				p = NULL;  /* value is a userdata with wrong metatable */
+			lua_pop(L, 2);  /* remove both metatables */
+		}
+	}
+	
+	if (p == NULL) {
+		char err_msg[256];
+		snprintf(err_msg, sizeof(err_msg), "%s expected, got %s",
+				 tname, luaL_typename(L, ud));
+		luaL_argerror(L, ud, err_msg);
+	}
+	
+	return p;
+#else
+	
+	return luaL_checkudata(L, ud, tname);
+	
+#endif
+}

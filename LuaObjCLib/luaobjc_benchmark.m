@@ -23,14 +23,14 @@ void luaobjc_benchmark_open(lua_State *L) {
 	lua_settable(L, -3);
 	
 	// create/add the REGISTRY_TABLE for tracking running benchmarks
-	lua_newtable(L);
-	lua_setfield(L, LUA_REGISTRYINDEX, REGISTRY_TABLE);
+	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_BENCHMARKS, REGISTRY_TABLE);
+	lua_pop(L, 1);
 }
 
 static int benchmark_start(lua_State *L) {
 	const char *name = luaL_checkstring(L, 1);
 	
-	lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_TABLE);
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_BENCHMARKS, REGISTRY_TABLE);
 	
 	// Check if we are overwriting an existing benchmark
 	lua_getfield(L, -1, name);
@@ -50,7 +50,7 @@ static int benchmark_start(lua_State *L) {
 static int benchmark_end(lua_State *L) {
 	const char *name = luaL_checkstring(L, 1);
 	
-	lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_TABLE);
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_BENCHMARKS, REGISTRY_TABLE);
 	
 	// Get start time
 	lua_getfield(L, -1, name);

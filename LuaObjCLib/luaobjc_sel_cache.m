@@ -10,12 +10,12 @@
 
 void luaobjc_sel_cache_open(lua_State *L) {
 	// create & add the REGISTRY_TABLE for tracking string -> selector
-	lua_newtable(L);
-	lua_setfield(L, LUA_REGISTRYINDEX, REGISTRY_TABLE);
+	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_SEL_CACHE, REGISTRY_TABLE);
+	lua_pop(L, 1);
 }
 
 SEL luaobjc_get_sel(lua_State *L, const char *name) {
-	lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_TABLE);
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_SEL_CACHE, REGISTRY_TABLE);
 	lua_getfield(L, -1, name);
 	
 	if (lua_isnil(L, -1)) {
