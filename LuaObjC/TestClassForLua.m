@@ -32,6 +32,8 @@
 
 - (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method { return a; }
 
+- (void)emptyMethod { }
+
 + (BOOL)respondsToSelector:(SEL)aSelector {
 	if ([NSStringFromSelector(aSelector) isEqualToString:@"dynamicMethod"])
 		return YES;

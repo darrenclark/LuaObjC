@@ -3,6 +3,7 @@
 
 
 #import "luaobjc_object.h"
+#import <objc/message.h>
 #import <objc/runtime.h>
 
 #define OBJECT_MT	"luaobjc_object_mt"
@@ -36,6 +37,7 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
 static const char *arg_encoding_skip_type_qualifiers(const char *encoding);
+static const char *arg_encoding_skip_stack_numbers(const char *current_pos);
 
 
 void luaobjc_object_open(lua_State *L) {
@@ -135,7 +137,9 @@ static int get_class(lua_State *L) {
 }
 
 static int obj_index(lua_State *L) {
-	id object = luaobjc_object_check(L, 1);
+	//id object = luaobjc_object_check(L, 1);
+	// we know this is gonna be a object, so screw checking it
+	id object = lua_touserdata(L, 1);
 	
 	size_t field_len;
 	const char *field_name = luaL_checklstring(L, 2, &field_len);
@@ -157,6 +161,39 @@ static int obj_index(lua_State *L) {
 	return 0; // should never reach here
 }
 
+// The whole purpose of the fastcall function is the bypass the NSInvocation song and dance
+// Returns -1 when it can't call the function directly, otherwise returns nargs like Lua functions should
+static inline int fastcall(lua_State *L, method_info *info, const char *type_encoding) {
+	// For now, just test if it matches the format v@:
+	const char *current_pos = type_encoding;
+	current_pos = arg_encoding_skip_type_qualifiers(current_pos);
+	
+	if (current_pos[0] != 'v')
+		return -1;
+	
+	current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
+	current_pos = arg_encoding_skip_stack_numbers(current_pos);
+	
+	current_pos = arg_encoding_skip_type_qualifiers(current_pos);
+	if (current_pos[0] != '@')
+		return -1;
+	
+	current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
+	current_pos = arg_encoding_skip_stack_numbers(current_pos);
+	
+	if (current_pos[0] != ':')
+		return -1;
+	
+	current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
+	current_pos = arg_encoding_skip_stack_numbers(current_pos);
+	
+	if (current_pos[0] != '\0')
+		return -1;
+	
+	((id(*)(id,SEL))objc_msgSend)(info->target, info->selector);
+	return 0;
+}
+
 static int obj_call_method(lua_State *L) {
 	const int arg_buf_len = 1024;
 	char arg_buf[arg_buf_len];
@@ -166,7 +203,14 @@ static int obj_call_method(lua_State *L) {
 	id target = info->target;
 	SEL sel = info->selector;
 	
-	// TODO: use objc_msgSend directly when possible
+	const char *type_encoding = NULL;
+	if (info->method) {
+		type_encoding = method_getTypeEncoding(info->method);
+		int fastcall_ret = fastcall(L, info, type_encoding);
+		if (fastcall_ret != -1)
+			return fastcall_ret;
+	}
+	
 	
 	NSMethodSignature *methodSig = [target methodSignatureForSelector:sel];
 	NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSig];
@@ -175,11 +219,12 @@ static int obj_call_method(lua_State *L) {
 	[invocation setArgument:&sel atIndex:1];
 	
 	// Handle arguments from Lua
-	if (info->method) {
-		const char *type_encoding = method_getTypeEncoding(info->method);
+	if (info->method && type_encoding) {
 		const char *current_pos = type_encoding;
 		int current_arg = -1; // since the return value is at the start
 		for (;;) {
+			current_pos = arg_encoding_skip_type_qualifiers(current_pos);
+			
 			// Handle argument
 			if (current_arg >= 2) {
 				convert_lua_arg(L, current_arg, invocation, current_arg, current_pos);
@@ -187,10 +232,7 @@ static int obj_call_method(lua_State *L) {
 			
 			// Move to next argument
 			current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
-			// since method_getTypeEncoding includes what seems like offsets/stack sizes/somethings
-			// after each arg, we need to skip over them
-			while (current_pos[0] != '\0' && current_pos[0] >= '0' && current_pos[0] <= '9')
-				current_pos++;
+			current_pos = arg_encoding_skip_stack_numbers(current_pos);
 			
 			if (current_pos[0] == '\0') // reached end of args
 				break;
@@ -337,7 +379,7 @@ static int obj_call_method(lua_State *L) {
 // selectors with _'s in them)
 static method_info lookup_method(const char *str, size_t len, id target) {
 	char transformed[len + 2]; // include 2 extra so we can append the last ':' optionally
-	strncpy(transformed, str, len);
+	memcpy(transformed, str, len);
 	transformed[len] = '\0';
 	transformed[len+1] = '\0';
 	
@@ -544,4 +586,11 @@ static const char *arg_encoding_skip_type_qualifiers(const char *encoding) {
 	}
 	
 	return NULL;
+}
+
+// Returns a pointer to the character after the weird method_getTypeEncoding numbers
+static const char *arg_encoding_skip_stack_numbers(const char *current_pos) {
+	while (current_pos[0] != '\0' && current_pos[0] >= '0' && current_pos[0] <= '9')
+		current_pos++;
+	return current_pos;
 }

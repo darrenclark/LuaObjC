@@ -65,8 +65,8 @@ printHeader("Benchmarks")
 for j = 1, 5 do
 	collectgarbage("stop")
 	objc.benchmark_start("Func call speed")
-	for i = 0, 1000 do
-		testClassInstance:a_benchmark_method(i, true, 56.6)
+	for i = 0, 5000 do
+		testClassInstance:emptyMethod()
 	end
 	objc.benchmark_end("Func call speed")
 	collectgarbage("collect")
