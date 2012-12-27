@@ -10,7 +10,7 @@ archs="i386 armv7 armv7s"
 sdk_ver="6.0"
 
 # some prep work
-rm -v libluajit.a
+rm -vf libluajit.a
 rm -rfv luajit-build
 mkdir -v luajit-build
 cd luajit-2.0/src
@@ -38,7 +38,7 @@ for arch in $archs; do
 
 	ISDKP=$ISDK/usr/bin/
 	ISDKF="-arch $arch -isysroot $ISDK/SDKs/$ISDKVER"
-	make HOST_CC="gcc -m32 -arch i386" CROSS=$ISDKP TARGET_FLAGS="$ISDKF" \
+	make HOST_CC="clang -m32 -arch i386" CROSS=$ISDKP TARGET_FLAGS="$ISDKF" \
 	     TARGET_SYS=iOS
 
 	cp -v libluajit.a ../../luajit-build/$arch

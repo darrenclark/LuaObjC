@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		954A65F5168BE876007690A8 /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 954A65F4168BE876007690A8 /* libluajit.a */; };
 		95F67923168A4DD4004819EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67922168A4DD4004819EE /* UIKit.framework */; };
 		95F67925168A4DD4004819EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67924168A4DD4004819EE /* Foundation.framework */; };
 		95F67927168A4DD4004819EE /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67926168A4DD4004819EE /* CoreGraphics.framework */; };
@@ -22,6 +23,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		954A65F4168BE876007690A8 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = SOURCE_ROOT; };
 		95F6791E168A4DD4004819EE /* LuaObjC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LuaObjC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		95F67922168A4DD4004819EE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		95F67924168A4DD4004819EE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -53,6 +55,7 @@
 				95F67923168A4DD4004819EE /* UIKit.framework in Frameworks */,
 				95F67925168A4DD4004819EE /* Foundation.framework in Frameworks */,
 				95F67927168A4DD4004819EE /* CoreGraphics.framework in Frameworks */,
+				954A65F5168BE876007690A8 /* libluajit.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,6 +105,7 @@
 		95F67929168A4DD4004819EE /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				954A65F4168BE876007690A8 /* libluajit.a */,
 				95F6792A168A4DD4004819EE /* LuaObjC-Info.plist */,
 				95F6792B168A4DD4004819EE /* InfoPlist.strings */,
 				95F6792E168A4DD4004819EE /* main.m */,
@@ -128,28 +132,12 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXLegacyTarget section */
-		954A65DD168BD355007690A8 /* luajit */ = {
-			isa = PBXLegacyTarget;
-			buildArgumentsString = "$(ACTION)";
-			buildConfigurationList = 954A65DE168BD355007690A8 /* Build configuration list for PBXLegacyTarget "luajit" */;
-			buildPhases = (
-			);
-			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = "/Users/darren/Projects/LuaObjC/luajit-2.0/src";
-			dependencies = (
-			);
-			name = luajit;
-			passBuildSettingsInEnvironment = 1;
-			productName = luajit;
-		};
-/* End PBXLegacyTarget section */
-
 /* Begin PBXNativeTarget section */
 		95F6791D168A4DD4004819EE /* LuaObjC */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 95F67936168A4DD4004819EE /* Build configuration list for PBXNativeTarget "LuaObjC" */;
 			buildPhases = (
+				954A65F3168BE69A007690A8 /* Build LuaJit */,
 				95F6791A168A4DD4004819EE /* Sources */,
 				95F6791B168A4DD4004819EE /* Frameworks */,
 				95F6791C168A4DD4004819EE /* Resources */,
@@ -184,7 +172,6 @@
 			projectRoot = "";
 			targets = (
 				95F6791D168A4DD4004819EE /* LuaObjC */,
-				954A65DD168BD355007690A8 /* luajit */,
 			);
 		};
 /* End PBXProject section */
@@ -200,6 +187,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		954A65F3168BE69A007690A8 /* Build LuaJit */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build LuaJit";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ ! -e \"libluajit.a\" ]; then\n# run w/ env -i to prevent Xcode environmental vars from breaking the build script\n    env -i ./build-luajit.sh\nfi";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		95F6791A168A4DD4004819EE /* Sources */ = {
@@ -230,47 +234,6 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		954A65DF168BD355007690A8 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEBUGGING_SYMBOLS = YES;
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-			};
-			name = Debug;
-		};
-		954A65E0168BD355007690A8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-			};
-			name = Release;
-		};
 		95F67934168A4DD4004819EE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -319,7 +282,12 @@
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "LuaObjC/LuaObjC-Prefix.pch";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/luajit-2.0/src";
 				INFOPLIST_FILE = "LuaObjC/LuaObjC-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)\"",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -330,7 +298,12 @@
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "LuaObjC/LuaObjC-Prefix.pch";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/luajit-2.0/src";
 				INFOPLIST_FILE = "LuaObjC/LuaObjC-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)\"",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -339,14 +312,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		954A65DE168BD355007690A8 /* Build configuration list for PBXLegacyTarget "luajit" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				954A65DF168BD355007690A8 /* Debug */,
-				954A65E0168BD355007690A8 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-		};
 		95F67918168A4DD4004819EE /* Build configuration list for PBXProject "LuaObjC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
