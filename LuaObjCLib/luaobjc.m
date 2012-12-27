@@ -5,6 +5,7 @@
 #import "luaobjc.h"
 #import "luaobjc_object.h"
 #import "luaobjc_benchmark.h"
+#import "luaobjc_sel_cache.h"
 
 #define LUA_NAMESPACE	"objc"
 
@@ -15,6 +16,7 @@ void luaobjc_open(lua_State *L) {
 	
 	luaobjc_object_open(L);
 	luaobjc_benchmark_open(L);
+	luaobjc_sel_cache_open(L);
 	
 	lua_pop(L, 1); // pop 'objc' global
 }

@@ -3,6 +3,8 @@
 
 
 #import "luaobjc_object.h"
+#import "luaobjc_sel_cache.h"
+
 #import <objc/message.h>
 #import <objc/runtime.h>
 
@@ -32,7 +34,7 @@ static int obj_index(lua_State *L);
 static int obj_call_method(lua_State *L);
 
 // Utility methods
-static method_info lookup_method(const char *str, size_t len, id target);
+static method_info lookup_method(lua_State *L, const char *str, size_t len, id target);
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
@@ -149,7 +151,7 @@ static int obj_index(lua_State *L) {
 	const char *field_name = luaL_checklstring(L, 2, &field_len);
 	
 	// check if it is a method on object
-	method_info method = lookup_method(field_name, field_len, object);
+	method_info method = lookup_method(L, field_name, field_len, object);
 	if (method_info_is_valid(method)) {
 		method_info *userdata = (method_info *)lua_newuserdata(L, sizeof(method_info));
 		*userdata = method;
@@ -381,7 +383,7 @@ static int obj_call_method(lua_State *L) {
 //
 // TODO: implement a way to call selectors that don't conform to this (for example,
 // selectors with _'s in them)
-static method_info lookup_method(const char *str, size_t len, id target) {
+static method_info lookup_method(lua_State *L, const char *str, size_t len, id target) {
 	char transformed[len + 2]; // include 2 extra so we can append the last ':' optionally
 	memcpy(transformed, str, len);
 	transformed[len] = '\0';
@@ -404,14 +406,14 @@ static method_info lookup_method(const char *str, size_t len, id target) {
 	// if target is a class, target_class should be null...
 	Class target_class = is_class(target) ? NULL : object_getClass(target);
 	
-	SEL sel = sel_getUid(transformed);
+	SEL sel = luaobjc_get_sel(L, transformed);
 	SEL fallback_sel = NULL;
 	
 	Method m = target_class ? class_getInstanceMethod(target_class, sel) : class_getClassMethod(target, sel);
 	if (m == NULL && !has_args) {
 		// Try again by adding one arg to the end
 		transformed[len] = ':';
-		fallback_sel = sel_getUid(transformed);
+		fallback_sel = luaobjc_get_sel(L, transformed);
 		m = target_class ? class_getInstanceMethod(target_class, fallback_sel) : class_getClassMethod(target, fallback_sel);
 	}
 	
