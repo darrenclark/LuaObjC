@@ -42,6 +42,9 @@ static const char *arg_encoding_skip_type_qualifiers(const char *encoding);
 static const char *arg_encoding_skip_stack_numbers(const char *current_pos);
 
 
+#import "Luaobjc_fastcall_impl.h"
+
+
 void luaobjc_object_open(lua_State *L) {
 	// 'objc' global is already on the stack! be sure to leave it at the top
 	// when this function returns!

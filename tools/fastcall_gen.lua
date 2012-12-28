@@ -1,4 +1,4 @@
-local MAX_ARGS = 1
+local MAX_ARGS = 2
 local VOID_RET = 'v'
 local TYPES = { "c", "i", "s", "l", "q", "C", "I", "S", "L", "Q", "f", "d", "B", "@", "#" }
 
@@ -26,7 +26,7 @@ TYPE_CTYPES["#"] = "id"
 
 local lua_to_c_char_base = [[
 	char arg_ARG_INDEX_;
-	if (lua_isboolean(L, _ARG_INDEX)) {
+	if (lua_isboolean(L, _ARG_INDEX_)) {
 		arg_ARG_INDEX_ = lua_toboolean(L, _ARG_INDEX_);
 	} else {
 		arg_ARG_INDEX_ = luaL_checknumber(L, _ARG_INDEX_);
@@ -49,7 +49,7 @@ local function lua_to_c_bool(arg_index, arg_type)
 end
 
 local lua_to_c_objects_base = [[
-	id arg_ARG_INDEX_ = nil
+	id arg_ARG_INDEX_ = nil;
 	if (lua_isnumber(L, _ARG_INDEX_)) {
 		double val = lua_tonumber(L, _ARG_INDEX_);
 		arg_ARG_INDEX_ = (NSNumber *)CFNumberCreate(kCFAllocatorDefault, kCFNumberDoubleType, &val);
@@ -86,6 +86,35 @@ TYPE_LUA_TO_C["B"] = lua_to_c_bool
 TYPE_LUA_TO_C["@"] = lua_to_c_objects
 TYPE_LUA_TO_C["#"] = lua_to_c_objects
 
+
+local c_to_lua_char = [[	if (ret == NO || ret == YES) {
+		lua_pushboolean(L, ret);
+	} else {
+		lua_pushnumber(L, ret);
+	}
+]]
+local c_to_lua_number = "\tlua_pushnumber(L, ret);"
+local c_to_lua_bool = "\tlua_pushboolean(L, ret);"
+local c_to_lua_object = "\tluaobjc_object_push(L, ret);"
+
+local TYPE_C_TO_LUA = {}
+TYPE_C_TO_LUA["c"] = c_to_lua_char
+TYPE_C_TO_LUA["i"] = c_to_lua_number
+TYPE_C_TO_LUA["s"] = c_to_lua_number
+TYPE_C_TO_LUA["l"] = c_to_lua_number
+TYPE_C_TO_LUA["q"] = c_to_lua_number
+TYPE_C_TO_LUA["C"] = c_to_lua_number
+TYPE_C_TO_LUA["I"] = c_to_lua_number
+TYPE_C_TO_LUA["S"] = c_to_lua_number
+TYPE_C_TO_LUA["L"] = c_to_lua_number
+TYPE_C_TO_LUA["Q"] = c_to_lua_number
+TYPE_C_TO_LUA["f"] = c_to_lua_number
+TYPE_C_TO_LUA["d"] = c_to_lua_number
+TYPE_C_TO_LUA["B"] = c_to_lua_bool
+TYPE_C_TO_LUA["@"] = c_to_lua_object
+TYPE_C_TO_LUA["#"] = c_to_lua_object
+
+
 local function msgsend_cast(ret, current_args)
 	local ret_type = TYPE_CTYPES[ret] or "void"
 	local ret_val = "((" .. ret_type .. "(*)(id, SEL"
@@ -117,16 +146,23 @@ local function generate_function(ret, current_args)
 		arg_str = arg_str .. v
 	end
 
-	local func_name = "fastcall_" .. (TYPE_TRANSLATION[ret] or ret) .. "_" .. arg_str
+	local func_name = "fc_" .. (TYPE_TRANSLATION[ret] or ret) .. "_" .. arg_str
 	
 	local output = "static int " .. func_name .. "(lua_State *L) {\n"
+	output = output .. "\tmethod_info *m_info = (method_info *)lua_touserdata(L, lua_upvalueindex(1));\n"
+
 	for i, v in ipairs(current_args) do
 		-- i + 1 b/c first arg is self
 		output = output .. TYPE_LUA_TO_C[v](i + 1, v) .. "\n"
 	end
 
 	output = output .. "\n" .. generate_msgsend(ret, current_args) .. "\n"
-	output = output .. "\treturn 0;\n}"
+	if ret == VOID_RET then
+		output = output .. "\treturn 0;\n}"
+	else
+		output = output .. TYPE_C_TO_LUA[ret] .. "\n"
+		output = output .. "\treturn 1;\n}"
+	end
 
 	print(output)
 	print("")
