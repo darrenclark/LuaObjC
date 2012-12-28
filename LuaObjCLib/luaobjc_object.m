@@ -3,6 +3,7 @@
 
 
 #import "luaobjc_object.h"
+#import "luaobjc_args.h"
 #import "luaobjc_fastcall.h"
 #import "luaobjc_sel_cache.h"
 #import "luaobjc_selector.h"
@@ -663,104 +664,70 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 	
 	switch (encoding[0]) {
 		case 'c': {
-			char val;
-			if (lua_isboolean(L, lua_idx)) {
-				val = lua_toboolean(L, lua_idx);
-			} else {
-				val = luaL_checknumber(L, lua_idx);
-			}
+			LUAOBJC_ARGS_LUA_CHAR(val, lua_idx)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'i': {
-			int val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, int)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 's': {
-			short val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, short)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'l': {
-			long val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, long)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'q': {
-			long long val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, long long)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'C': {
-			unsigned char val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, unsigned char)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'I': {
-			unsigned int val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, unsigned int)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'S': {
-			unsigned short val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, unsigned short)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'L': {
-			unsigned long val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, unsigned long)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'Q': {
-			unsigned long long val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, unsigned long long)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'f': {
-			float val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, float)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'd': {
-			double val = luaL_checknumber(L, lua_idx);
+			LUAOBJC_ARGS_LUA_NUMBER(val, lua_idx, double)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'B': {
-			luaL_argcheck(L, lua_isboolean(L, lua_idx), lua_idx, "`boolean' expected");
-			_Bool val = lua_toboolean(L, lua_idx);
+			LUAOBJC_ARGS_LUA_BOOL(val, lua_idx)
 			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case 'v': break;
 		case '*': {
-			BOOL isstring = lua_isstring(L, lua_idx);
-			BOOL isnil = lua_isnil(L, lua_idx);
-			luaL_argcheck(L, isstring || isnil, lua_idx, "`string' expected");
-			
-			const char *str = NULL;
-			if (isstring)
-				str = lua_tostring(L, lua_idx);
+			LUAOBJC_ARGS_LUA_CSTRING(str, lua_idx);
 			[invocation setArgument:&str atIndex:invocation_idx];
 		} break;
 		case '@': // Both objects and classes are treated they same by us
 		case '#': {
 			// Auto convert some Lua values into Objective C values
-			if (lua_isnumber(L, lua_idx)) {
-				double val = lua_tonumber(L, lua_idx);
-				
-				NSNumber *number = (NSNumber *)CFNumberCreate(kCFAllocatorDefault,
-															  kCFNumberDoubleType, &val);
-				[number autorelease];
-				
-				[invocation setArgument:&number atIndex:invocation_idx];
-			} else if (lua_isboolean(L, lua_idx)) {
-				int val = lua_toboolean(L, lua_idx);
-				
-				NSNumber *number = (NSNumber *)CFNumberCreate(kCFAllocatorDefault,
-															  kCFNumberIntType, &val);
-				[number autorelease];
-				
-				[invocation setArgument:&number atIndex:invocation_idx];
-			} else if (lua_isstring(L, lua_idx)) {
-				const char *str = lua_tolstring(L, lua_idx, NULL);
-				NSString *objc_str = [NSString stringWithUTF8String:str];
-				[invocation setArgument:&objc_str atIndex:invocation_idx];
-			} else {
-				id val = luaobjc_object_check_or_nil(L, lua_idx);
-				[invocation setArgument:&val atIndex:invocation_idx];
-			}
+			LUAOBJC_ARGS_LUA_OBJECT(val, lua_idx)
+			[invocation setArgument:&val atIndex:invocation_idx];
 		} break;
 		case ':': {
-			SEL sel = luaobjc_selector_check(L, lua_idx);
+			LUAOBJC_ARGS_LUA_SEL(sel, lua_idx)
 			[invocation setArgument:&sel atIndex:invocation_idx];
 		} break;
 		default: {

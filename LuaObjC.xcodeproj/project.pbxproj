@@ -30,6 +30,7 @@
 		952D3E4D168D6F5600DFCA75 /* luaobjc_fastcall.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_fastcall.h; sourceTree = "<group>"; };
 		952D3E56168E397B00DFCA75 /* luaobjc_selector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_selector.h; sourceTree = "<group>"; };
 		952D3E57168E397B00DFCA75 /* luaobjc_selector.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_selector.m; sourceTree = "<group>"; };
+		952D3E5A168E42FD00DFCA75 /* luaobjc_args.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = luaobjc_args.h; sourceTree = "<group>"; };
 		954A65F4168BE876007690A8 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = SOURCE_ROOT; };
 		954A65FE168BF201007690A8 /* luaobjc_sel_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_sel_cache.h; sourceTree = "<group>"; };
 		954A65FF168BF201007690A8 /* luaobjc_sel_cache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_sel_cache.m; sourceTree = "<group>"; };
@@ -141,6 +142,7 @@
 				954A65FF168BF201007690A8 /* luaobjc_sel_cache.m */,
 				952D3E56168E397B00DFCA75 /* luaobjc_selector.h */,
 				952D3E57168E397B00DFCA75 /* luaobjc_selector.m */,
+				952D3E5A168E42FD00DFCA75 /* luaobjc_args.h */,
 			);
 			path = LuaObjCLib;
 			sourceTree = "<group>";
