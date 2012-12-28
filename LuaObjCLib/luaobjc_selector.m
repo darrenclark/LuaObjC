@@ -15,15 +15,11 @@ void luaobjc_selector_open(lua_State *L) {
 	// at the end of this function!
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_SELECTOR_MT, SELECTOR_MT);
 	
-	lua_pushstring(L, "__tostring");
-	lua_pushcfunction(L, selector_tostring);
-	lua_settable(L, -3);
+	LUAOBJC_ADD_METHOD("__tostring", selector_tostring)
 	
 	lua_pop(L, 1); // pop metatable
 	
-	lua_pushstring(L, "sel");
-	lua_pushcfunction(L, sel);
-	lua_settable(L, -3);
+	LUAOBJC_ADD_METHOD("sel", sel)
 }
 
 

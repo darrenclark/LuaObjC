@@ -48,21 +48,10 @@ void luaobjc_object_open(lua_State *L) {
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 	
-	lua_pushstring(L, "__index");
-	lua_pushcfunction(L, object_index);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "__newindex");
-	lua_pushcfunction(L, object_newindex);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "__tostring");
-	lua_pushcfunction(L, object_tostring);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "__gc");
-	lua_pushcfunction(L, object_gc);
-	lua_settable(L, -3);
+	LUAOBJC_ADD_METHOD("__index", object_index);
+	LUAOBJC_ADD_METHOD("__newindex", object_newindex)
+	LUAOBJC_ADD_METHOD("__tostring", object_tostring)
+	LUAOBJC_ADD_METHOD("__gc", object_gc)
 	
 	lua_pop(L, 1); // pop metatable
 	
@@ -70,26 +59,11 @@ void luaobjc_object_open(lua_State *L) {
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
 	lua_pop(L, 1);
 	
-	
-	lua_pushstring(L, "class");
-	lua_pushcfunction(L, get_class);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "to_objc");
-	lua_pushcfunction(L, to_objc);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "to_lua");
-	lua_pushcfunction(L, to_lua);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "strong");
-	lua_pushcfunction(L, strong_ref);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "weak");
-	lua_pushcfunction(L, weak_ref);
-	lua_settable(L, -3);
+	LUAOBJC_ADD_METHOD("class", get_class)
+	LUAOBJC_ADD_METHOD("to_objc", to_objc)
+	LUAOBJC_ADD_METHOD("to_lua", to_lua)
+	LUAOBJC_ADD_METHOD("strong", strong_ref)
+	LUAOBJC_ADD_METHOD("weak", weak_ref)
 }
 
 static inline void object_push_internal(lua_State *L, id object) {

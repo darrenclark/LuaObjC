@@ -71,7 +71,11 @@ LUAOBJC_EXTERN_END
 #define LUAOBJC_REGISTRY_SELECTOR_MT	5
 
 
-
+// Sets t[lua_name] = func_ptr, where t is the table at the top of the stack
+#define LUAOBJC_ADD_METHOD(lua_name, func_ptr) \
+	lua_pushstring(L, lua_name);											\
+	lua_pushcfunction(L, func_ptr);											\
+	lua_settable(L, -3);													\
 
 LUAOBJC_EXTERN void luaobjc_open(lua_State *L);
 LUAOBJC_EXTERN void *luaobjc_checkudata(lua_State *L, int ud, int ref, const char *tname);

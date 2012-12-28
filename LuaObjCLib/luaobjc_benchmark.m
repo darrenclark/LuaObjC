@@ -14,13 +14,8 @@ static int benchmark_end(lua_State *L);
 void luaobjc_benchmark_open(lua_State *L) {
 	// 'objc' global is already on the stack here!
 	
-	lua_pushstring(L, "benchmark_start");
-	lua_pushcfunction(L, benchmark_start);
-	lua_settable(L, -3);
-	
-	lua_pushstring(L, "benchmark_end");
-	lua_pushcfunction(L, benchmark_end);
-	lua_settable(L, -3);
+	LUAOBJC_ADD_METHOD("benchmark_start", benchmark_start)
+	LUAOBJC_ADD_METHOD("benchmark_end", benchmark_end);
 	
 	// create/add the REGISTRY_TABLE for tracking running benchmarks
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_BENCHMARKS, REGISTRY_TABLE);
