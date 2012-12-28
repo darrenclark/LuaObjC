@@ -1,5 +1,4 @@
 TODO (before I consider it usable):
-- selectors (objc.sel to get a selector and then pass that to functions)
 - structs
 - objc.call - to call methods w/ selectors that we don't support
 - objc.super - to call super methods

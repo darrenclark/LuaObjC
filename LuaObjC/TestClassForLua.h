@@ -15,7 +15,7 @@
 - (CGRect)testStruct;
 - (void)testStructPt2:(CGRect)rect;
 - (SEL)testSelector;
-- (void)testSelectorPt2;
+- (id)testSelectorPt2;
 
 - (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method;
 - (void)emptyMethod;

@@ -5,6 +5,7 @@
 #import "luaobjc_object.h"
 #import "luaobjc_fastcall.h"
 #import "luaobjc_sel_cache.h"
+#import "luaobjc_selector.h"
 
 #define OBJECT_MT	"luaobjc_object_mt"
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
@@ -538,6 +539,11 @@ static int generic_call(lua_State *L) {
 			[invocation getReturnValue:&val];
 			luaobjc_object_push(L, val);
 		} break;
+		case ':': {
+			SEL val;
+			[invocation getReturnValue:&val];
+			luaobjc_selector_push(L, val);
+		} break;
 		default: {
 			NSUInteger unknown_size;
 			NSGetSizeAndAlignment(return_type, &unknown_size, NULL);
@@ -752,6 +758,10 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 				id val = luaobjc_object_check_or_nil(L, lua_idx);
 				[invocation setArgument:&val atIndex:invocation_idx];
 			}
+		} break;
+		case ':': {
+			SEL sel = luaobjc_selector_check(L, lua_idx);
+			[invocation setArgument:&sel atIndex:invocation_idx];
 		} break;
 		default: {
 			if (encoding[0] == '^' && lua_isnil(L, lua_idx)) {

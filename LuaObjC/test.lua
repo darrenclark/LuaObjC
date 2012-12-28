@@ -53,12 +53,6 @@ printHeader("'Unknown' tests")
 local cgRect = testClassInstance:testStruct()
 testClassInstance:testStructPt2(cgRect)
 
--- Disabled because on ARM performSelector w/ a method returning void gives a
--- gibberish value
---
---local sel = testClassInstance:testSelector()
---testClassInstance:performSelector(sel)
-
 -- Table access test
 printHeader("Table access tests")
 testClassInstance.testLuaValue = 5
@@ -117,6 +111,10 @@ instance = nil
 printHeader("Selectors")
 local sel = objc.sel("description")
 print("objc.sel('description'): " .. tostring(sel))
+print(testClassInstance:performSelector(sel))
+
+sel = testClassInstance:testSelector()
+testClassInstance:performSelector(sel)
 
 -- Benchmarks
 printHeader("Benchmarks")

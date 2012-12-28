@@ -26,8 +26,9 @@
 	return @selector(testSelectorPt2);
 }
 
-- (void)testSelectorPt2 {
+- (id)testSelectorPt2 {
 	NSLog(@"testSelectorPt2 called!");
+	return nil;
 }
 
 - (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method { return a; }
