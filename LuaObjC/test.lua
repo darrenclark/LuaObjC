@@ -86,6 +86,8 @@ array[#array+1] = "Hello, World!"
 array[#array+1] = true
 print("Array: " .. objc.to_objc(array):description())
 
+print("tostring: " .. tostring(testClassInstance))
+
 -- Benchmarks
 printHeader("Benchmarks")
 

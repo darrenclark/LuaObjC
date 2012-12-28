@@ -20,7 +20,7 @@ LUAOBJC_EXTERN id luaobjc_object_get(lua_State*L, int idx);
 LUAOBJC_EXTERN id luaobjc_object_check(lua_State *L, int idx);
 LUAOBJC_EXTERN id luaobjc_object_check_or_nil(lua_State *L, int idx);
 
-// Converts a Lua value to an object
+// Converts a Lua value to an object (including table -> dictionary/array)
 LUAOBJC_EXTERN id luaobjc_to_objc(lua_State *L, int idx);
 
 // For dealing with return values/args unknown to our Lua bindings. (For example,
