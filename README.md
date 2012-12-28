@@ -71,4 +71,4 @@ The `LuaContext` class handles creating a Lua context and initializing LuaObjC. 
 
 ## License
 
-Released under the MIT license - see LICENSE.
+Released under the MIT license - see [LICENSE](https://raw.github.com/darrenclark/LuaObjC/master/LICENSE).
