@@ -4,6 +4,25 @@
 
 #import "luaobjc.h"
 
+////-------REFACTOR ME!!!!--------
+#import <objc/message.h>
+#import <objc/runtime.h>
+
+typedef struct method_info {
+	id target;
+	SEL selector;
+	Method method;
+} method_info;
+
+static const method_info invalid_method_info = { NULL, NULL, NULL };
+
+// a valid method_info is one with at least target & selector != NULL. If
+// method is NULL, it just forces us to use the slower way to invoke the method
+static inline BOOL method_info_is_valid(method_info info) {
+	return info.target != NULL && info.selector != NULL;
+}
+////------------------------------
+
 LUAOBJC_EXTERN void luaobjc_object_open(lua_State *L);
 
 // Pushes an Objective C object and converts various classes to Lua types

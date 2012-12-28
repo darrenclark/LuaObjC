@@ -3,29 +3,11 @@
 
 
 #import "luaobjc_object.h"
+#import "luaobjc_fastcall.h"
 #import "luaobjc_sel_cache.h"
-
-#import <objc/message.h>
-#import <objc/runtime.h>
 
 #define OBJECT_MT	"luaobjc_object_mt"
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
-
-
-typedef struct method_info {
-	id target;
-	SEL selector;
-	Method method;
-} method_info;
-
-static const method_info invalid_method_info = { NULL, NULL, NULL };
-
-// a valid method_info is one with at least target & selector != NULL. If
-// method is NULL, it just forces us to use the slower way to invoke the method
-static inline BOOL method_info_is_valid(method_info info) {
-	return info.target != NULL && info.selector != NULL;
-}
-
 
 
 static int get_class(lua_State *L);
@@ -40,9 +22,6 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 static BOOL is_class(id object);
 static const char *arg_encoding_skip_type_qualifiers(const char *encoding);
 static const char *arg_encoding_skip_stack_numbers(const char *current_pos);
-
-
-#import "Luaobjc_fastcall_impl.h"
 
 
 void luaobjc_object_open(lua_State *L) {
@@ -145,6 +124,28 @@ static int get_class(lua_State *L) {
 	return 1;
 }
 
+static lua_CFunction check_fastcall(method_info *method_info) {
+	Method m = method_info->method;
+	if (m == NULL)
+		return NULL;
+	
+	int arg_count = method_getNumberOfArguments(m);
+	arg_count -= 2;
+	if (arg_count > luaobjc_fastcall_max_args)
+		return NULL;
+	
+	// we only accept simple types right now, so we only need 1 char
+	char ret[1];
+	method_getReturnType(m, ret, 1);
+	
+	char args[3] = { '\0', '\0', '\0' };
+	for (int i = 0; i < arg_count; i++) {
+		method_getArgumentType(m, i + 2, args + i, 1);
+	}
+	
+	return luaobjc_fastcall_get(*ret, args);
+}
+
 static int obj_index(lua_State *L) {
 	//id object = luaobjc_object_check(L, 1);
 	// we know this is gonna be a object, so screw checking it
@@ -158,7 +159,9 @@ static int obj_index(lua_State *L) {
 	if (method_info_is_valid(method)) {
 		method_info *userdata = (method_info *)lua_newuserdata(L, sizeof(method_info));
 		*userdata = method;
-		lua_pushcclosure(L, obj_call_method, 1);
+		
+		lua_CFunction fastcall_method = check_fastcall(&method);
+		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : obj_call_method, 1);
 		return 1;
 	} else {
 		NSString *error_msg = [NSString stringWithFormat:@"Unable to resolve method '%s'"
@@ -215,11 +218,7 @@ static int obj_call_method(lua_State *L) {
 	const char *type_encoding = NULL;
 	if (info->method) {
 		type_encoding = method_getTypeEncoding(info->method);
-		int fastcall_ret = fastcall(L, info, type_encoding);
-		if (fastcall_ret != -1)
-			return fastcall_ret;
 	}
-	
 	
 	NSMethodSignature *methodSig = [target methodSignatureForSelector:sel];
 	NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSig];
