@@ -1,4 +1,4 @@
-local MAX_ARGS = 3
+local MAX_ARGS = 1
 local VOID_RET = 'v'
 local TYPES = { "c", "i", "s", "l", "q", "C", "I", "S", "L", "Q", "f", "d", "B", "@", "#" }
 
@@ -86,6 +86,30 @@ TYPE_LUA_TO_C["B"] = lua_to_c_bool
 TYPE_LUA_TO_C["@"] = lua_to_c_objects
 TYPE_LUA_TO_C["#"] = lua_to_c_objects
 
+local function msgsend_cast(ret, current_args)
+	local ret_type = TYPE_CTYPES[ret] or "void"
+	local ret_val = "((" .. ret_type .. "(*)(id, SEL"
+	for i, v in ipairs(current_args) do
+		ret_val = ret_val .. ", " .. TYPE_CTYPES[v]
+	end
+	ret_val = ret_val .. "))objc_msgSend)"
+	return ret_val
+end
+
+local function generate_msgsend(ret, current_args)
+	local ret_val = "\t"
+	if ret ~= VOID_RET then
+		ret_val = "\t" .. TYPE_CTYPES[ret] .. " ret = "
+	end
+	ret_val = ret_val .. msgsend_cast(ret, current_args) .. "(m_info->target, m_info->selector"
+
+	for i, v in ipairs(current_args) do
+		ret_val = ret_val .. ", arg" .. tostring(i + 1)
+	end
+	ret_val = ret_val .. ");"
+	return ret_val
+end
+
 local function generate_function(ret, current_args)
 	local arg_str = ""
 	for i, v in ipairs(current_args) do
@@ -100,7 +124,8 @@ local function generate_function(ret, current_args)
 		-- i + 1 b/c first arg is self
 		output = output .. TYPE_LUA_TO_C[v](i + 1, v) .. "\n"
 	end
-	
+
+	output = output .. "\n" .. generate_msgsend(ret, current_args) .. "\n"
 	output = output .. "\treturn 0;\n}"
 
 	print(output)
