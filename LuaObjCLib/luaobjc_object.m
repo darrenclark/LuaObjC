@@ -9,6 +9,8 @@
 #define OBJECT_MT	"luaobjc_object_mt"
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
 
+const luaobjc_method_info luaobjc_method_info_invald = { NULL, NULL, NULL };
+
 
 static int get_class(lua_State *L);
 
@@ -16,7 +18,7 @@ static int obj_index(lua_State *L);
 static int obj_call_method(lua_State *L);
 
 // Utility methods
-static method_info lookup_method(lua_State *L, const char *str, size_t len, id target);
+static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t len, id target);
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
@@ -124,7 +126,7 @@ static int get_class(lua_State *L) {
 	return 1;
 }
 
-static lua_CFunction check_fastcall(method_info *method_info) {
+static lua_CFunction check_fastcall(luaobjc_method_info *method_info) {
 	Method m = method_info->method;
 	if (m == NULL)
 		return NULL;
@@ -155,9 +157,9 @@ static int obj_index(lua_State *L) {
 	const char *field_name = luaL_checklstring(L, 2, &field_len);
 	
 	// check if it is a method on object
-	method_info method = lookup_method(L, field_name, field_len, object);
-	if (method_info_is_valid(method)) {
-		method_info *userdata = (method_info *)lua_newuserdata(L, sizeof(method_info));
+	luaobjc_method_info method = lookup_method(L, field_name, field_len, object);
+	if (LUAOBJC_METHOD_INFO_IS_VALID(method)) {
+		luaobjc_method_info *userdata = (luaobjc_method_info *)lua_newuserdata(L, sizeof(luaobjc_method_info));
 		*userdata = method;
 		
 		lua_CFunction fastcall_method = check_fastcall(&method);
@@ -175,7 +177,7 @@ static int obj_index(lua_State *L) {
 
 // The whole purpose of the fastcall function is the bypass the NSInvocation song and dance
 // Returns -1 when it can't call the function directly, otherwise returns nargs like Lua functions should
-static inline int fastcall(lua_State *L, method_info *info, const char *type_encoding) {
+static inline int fastcall(lua_State *L, luaobjc_method_info *info, const char *type_encoding) {
 	// For now, just test if it matches the format v@:
 	const char *current_pos = type_encoding;
 	current_pos = arg_encoding_skip_type_qualifiers(current_pos);
@@ -210,7 +212,7 @@ static int obj_call_method(lua_State *L) {
 	const int arg_buf_len = 1024;
 	char arg_buf[arg_buf_len];
 	
-	method_info *info = (method_info *)lua_touserdata(L, lua_upvalueindex(1));
+	luaobjc_method_info *info = (luaobjc_method_info *)lua_touserdata(L, lua_upvalueindex(1));
 	
 	id target = info->target;
 	SEL sel = info->selector;
@@ -372,7 +374,7 @@ static int obj_call_method(lua_State *L) {
 	return 1;
 }
 
-// Gets a method_info from a target object & lua string
+// Gets a luaobjc_method_info from a target object & lua string
 // When used in Lua to call a method, a selector will contain _'s for :'s, so
 // we need to transform them back into proper objective c selectors
 //
@@ -385,7 +387,7 @@ static int obj_call_method(lua_State *L) {
 //
 // TODO: implement a way to call selectors that don't conform to this (for example,
 // selectors with _'s in them)
-static method_info lookup_method(lua_State *L, const char *str, size_t len, id target) {
+static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t len, id target) {
 	char transformed[len + 2]; // include 2 extra so we can append the last ':' optionally
 	memcpy(transformed, str, len);
 	transformed[len] = '\0';
@@ -427,17 +429,17 @@ static method_info lookup_method(lua_State *L, const char *str, size_t len, id t
 			fallback_worked = [target respondsToSelector:fallback_sel];
 		
 		if (sel_worked || fallback_worked) {
-			method_info mi;
+			luaobjc_method_info mi;
 			mi.target = target;
 			mi.selector = sel_worked ? sel : fallback_sel;
 			mi.method = NULL;
 			return mi;
 		}
 		
-		return invalid_method_info;
+		return luaobjc_method_info_invald;
 	}
 	
-	method_info info;
+	luaobjc_method_info info;
 	info.target = target;
 	info.selector = fallback_sel == NULL ? sel : fallback_sel;
 	info.method = m;

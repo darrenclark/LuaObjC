@@ -3,25 +3,9 @@
 
 
 #import "luaobjc.h"
-
-////-------REFACTOR ME!!!!--------
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-typedef struct method_info {
-	id target;
-	SEL selector;
-	Method method;
-} method_info;
-
-static const method_info invalid_method_info = { NULL, NULL, NULL };
-
-// a valid method_info is one with at least target & selector != NULL. If
-// method is NULL, it just forces us to use the slower way to invoke the method
-static inline BOOL method_info_is_valid(method_info info) {
-	return info.target != NULL && info.selector != NULL;
-}
-////------------------------------
 
 LUAOBJC_EXTERN void luaobjc_object_open(lua_State *L);
 
@@ -35,7 +19,6 @@ LUAOBJC_EXTERN id luaobjc_object_check(lua_State *L, int idx);
 LUAOBJC_EXTERN id luaobjc_object_check_or_nil(lua_State *L, int idx);
 
 
-
 // For dealing with return values/args unknown to our Lua bindings. (For example,
 // unions, bitfields, pointers to unknown data types).
 typedef struct luaobjc_unknown {
@@ -47,3 +30,17 @@ typedef struct luaobjc_unknown {
 LUAOBJC_EXTERN void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len);
 // pass in 0 for 'len' if you don't want to check the lengths
 LUAOBJC_EXTERN luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size_t len);
+
+
+// Various info cached about a method from the __index metamethod
+typedef struct luaobjc_method_info {
+	id target;
+	SEL selector;
+	Method method;
+} luaobjc_method_info;
+
+LUAOBJC_EXTERN_BEGIN
+extern const luaobjc_method_info luaobjc_method_info_invalid;
+LUAOBJC_EXTERN_END
+
+#define LUAOBJC_METHOD_INFO_IS_VALID(info)	(info.target != NULL && info.selector != NULL)

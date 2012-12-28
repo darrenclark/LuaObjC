@@ -158,7 +158,7 @@ local function generate_function(ret, current_args)
 	local func_name = get_func_name(ret, current_args)
 	
 	local output = "static int " .. func_name .. "(lua_State *L) {\n"
-	output = output .. "\tmethod_info *m_info = (method_info *)lua_touserdata(L, lua_upvalueindex(1));\n"
+	output = output .. "\tluaobjc_method_info *m_info = (luaobjc_method_info *)lua_touserdata(L, lua_upvalueindex(1));\n"
 
 	for i, v in ipairs(current_args) do
 		-- i + 1 b/c first arg is self
