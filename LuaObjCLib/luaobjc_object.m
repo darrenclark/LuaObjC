@@ -12,6 +12,11 @@
 const luaobjc_method_info luaobjc_method_info_invald = { NULL, NULL, NULL };
 
 
+typedef struct luaobjc_object {
+	id object;
+} luaobjc_object;
+
+
 static int get_class(lua_State *L);
 
 static int object_index(lua_State *L);
@@ -49,6 +54,18 @@ void luaobjc_object_open(lua_State *L) {
 	lua_settable(L, -3);
 }
 
+static inline void object_push_internal(lua_State *L, id object) {
+	// don't use a light userdata so that we can use lua_setfenv
+	luaobjc_object *new_userdata = lua_newuserdata(L, sizeof(luaobjc_object));
+	new_userdata->object = object;
+	
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
+	lua_setmetatable(L, -2);
+	
+	lua_newtable(L);
+	lua_setfenv(L, -2);
+}
+
 void luaobjc_object_push(lua_State *L, id object) {
 	// Cache classes for faster lookup
 	static Class ObjCNumber = Nil, ObjCString = Nil;
@@ -65,9 +82,7 @@ void luaobjc_object_push(lua_State *L, id object) {
 	} else if ([object isKindOfClass:ObjCString]) {
 		lua_pushstring(L, [object UTF8String]);
 	} else {
-		lua_pushlightuserdata(L, object);
-		LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
-		lua_setmetatable(L, -2);
+		object_push_internal(L, object);
 	}
 }
 
@@ -75,24 +90,29 @@ void luaobjc_object_push_strict(lua_State *L, id object) {
 	if (object == nil) {
 		lua_pushnil(L);
 	} else {
-		lua_pushlightuserdata(L, object);
-		LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
-		lua_setmetatable(L, -2);
+		object_push_internal(L, object);
 	}
 }
 
+id luaobjc_object_get(lua_State*L, int idx) {
+	luaobjc_object *userdata = lua_touserdata(L, idx);
+	if (userdata == NULL)
+		return NULL;
+	return userdata->object;
+}
+
 id luaobjc_object_check(lua_State *L, int idx) {
-	void *object = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
-	luaL_argcheck(L, object != NULL, idx, "Objective C object expected");
-	return (id)object;
+	luaobjc_object *userdata = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
+	luaL_argcheck(L, userdata != NULL, idx, "Objective C object expected");
+	return userdata->object;
 }
 
 id luaobjc_object_check_or_nil(lua_State *L, int idx) {
 	if (lua_isnil(L, idx))
 		return nil;
-	void *object = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
-	luaL_argcheck(L, object != NULL, idx, "Objective C object (or nil) expected");
-	return (id)object;
+	luaobjc_object *userdata = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
+	luaL_argcheck(L, userdata != NULL, idx, "Objective C object (or nil) expected");
+	return userdata->object;
 }
 
 
@@ -128,8 +148,20 @@ static int get_class(lua_State *L) {
 }
 
 static int object_index(lua_State *L) {
+	// check if it exists in our table
+	lua_getfenv(L, 1); // t, k, fenv
+	lua_pushvalue(L, 2); // t, k, fenv, k
+	lua_rawget(L, -2); // t, k, fenv, v
+	
+	if (!lua_isnil(L, -1)) {
+		lua_replace(L, -2); // t, k, v
+		return 1;
+	} else {
+		lua_pop(L, 1); // t, k, fenv
+	}
+	
 	// we know this is gonna be a object, so no need to check it
-	id object = lua_touserdata(L, 1);
+	id object = luaobjc_object_get(L, 1);
 	
 	size_t field_len;
 	const char *field_name = luaL_checklstring(L, 2, &field_len);
@@ -141,16 +173,21 @@ static int object_index(lua_State *L) {
 		*userdata = method;
 		
 		lua_CFunction fastcall_method = check_fastcall(&method);
-		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1);
+		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1); // t, k, fenv, cfunc
+		
+		// cache it in our fenv
+		lua_pushvalue(L, 2); // t, k, fenv, cfunc, k
+		lua_pushvalue(L, -2); // t, k, fenv, cfunc, k, cfunc
+		lua_rawset(L, -4); // t, k, fenv, cfunc
+		
+		// set our stack so the cfunc is just after the args and return it
+		lua_replace(L, -2); // t, k, cfunc
 		return 1;
 	} else {
-		NSString *error_msg = [NSString stringWithFormat:@"Unable to resolve method '%s'"
-							   @"for object '%@' of type '%@'", field_name, object, [object class]];
-		lua_pushstring(L, [error_msg UTF8String]);
-		lua_error(L);
+		lua_pop(L, 1); // t, k
+		lua_pushnil(L); // t, k, nil
+		return 1;
 	}
-	
-	return 0; // should never reach here
 }
 
 static int generic_call(lua_State *L) {
