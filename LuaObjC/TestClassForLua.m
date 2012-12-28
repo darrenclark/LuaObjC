@@ -131,4 +131,9 @@
 	return [NSArray class];
 }
 
+- (void)dealloc {
+	NSLog(@"TestClassForLua dealloc!");
+	[super dealloc];
+}
+
 @end

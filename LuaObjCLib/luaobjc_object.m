@@ -14,16 +14,20 @@ const luaobjc_method_info luaobjc_method_info_invald = { NULL, NULL, NULL };
 
 typedef struct luaobjc_object {
 	id object;
+	BOOL strong;
 } luaobjc_object;
 
 
 static int get_class(lua_State *L);
 static int to_objc(lua_State *L);
 static int to_lua(lua_State *L);
+static int strong_ref(lua_State *L);
+static int weak_ref(lua_State *L);
 
 static int object_index(lua_State *L);
 static int object_newindex(lua_State *L);
 static int object_tostring(lua_State *L);
+static int object_gc(lua_State *L);
 static int generic_call(lua_State *L);
 
 // Utility methods
@@ -54,6 +58,10 @@ void luaobjc_object_open(lua_State *L) {
 	lua_pushcfunction(L, object_tostring);
 	lua_settable(L, -3);
 	
+	lua_pushstring(L, "__gc");
+	lua_pushcfunction(L, object_gc);
+	lua_settable(L, -3);
+	
 	lua_pop(L, 1); // pop metatable
 	
 	
@@ -72,12 +80,21 @@ void luaobjc_object_open(lua_State *L) {
 	lua_pushstring(L, "to_lua");
 	lua_pushcfunction(L, to_lua);
 	lua_settable(L, -3);
+	
+	lua_pushstring(L, "strong");
+	lua_pushcfunction(L, strong_ref);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "weak");
+	lua_pushcfunction(L, weak_ref);
+	lua_settable(L, -3);
 }
 
 static inline void object_push_internal(lua_State *L, id object) {
 	// don't use a light userdata so that we can use lua_setfenv
 	luaobjc_object *new_userdata = lua_newuserdata(L, sizeof(luaobjc_object));
 	new_userdata->object = object;
+	new_userdata->strong = NO;
 	
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 	lua_setmetatable(L, -2);
@@ -273,6 +290,28 @@ static int to_lua(lua_State *L) {
 	return 1;
 }
 
+static int strong_ref(lua_State *L) {
+	luaobjc_object_check(L, 1);
+	luaobjc_object *object = (luaobjc_object *)lua_touserdata(L, 1);
+	if (!object->strong) {
+		object->strong = YES;
+		[object->object retain];
+	}
+	
+	return 0;
+}
+
+static int weak_ref(lua_State *L) {
+	luaobjc_object_check(L, 1);
+	luaobjc_object *object = (luaobjc_object *)lua_touserdata(L, 1);
+	if (object->strong) {
+		object->strong = NO;
+		[object->object autorelease];
+	}
+	
+	return 0;
+}
+
 static int object_index(lua_State *L) {
 	// check if it exists in our table
 	lua_getfenv(L, 1); // t, k, fenv
@@ -335,6 +374,16 @@ static int object_tostring(lua_State *L) {
 	else
 		lua_pushnil(L);
 	return 1;
+}
+
+static int object_gc(lua_State *L) {
+	luaobjc_object *userdata = (luaobjc_object *)lua_touserdata(L, 1);
+	if (userdata->strong) {
+		userdata->strong = NO;
+		[userdata->object autorelease];
+	}
+	
+	return 0;
 }
 
 static int generic_call(lua_State *L) {

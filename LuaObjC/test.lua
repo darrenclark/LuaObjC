@@ -106,6 +106,12 @@ local luaDict = objc.to_lua(mutableDict)
 print("Lua dictionary:")
 table.foreach(luaDict, print)
 
+-- Test strong/weak
+local instance = testClass:alloc():init():autorelease()
+objc.strong(instance)
+
+-- let GC collect it and then release it
+instance = nil
 
 -- Benchmarks
 printHeader("Benchmarks")
