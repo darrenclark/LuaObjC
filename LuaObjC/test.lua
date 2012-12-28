@@ -59,6 +59,16 @@ testClassInstance:testStructPt2(cgRect)
 --local sel = testClassInstance:testSelector()
 --testClassInstance:performSelector(sel)
 
+-- Table access test
+printHeader("Table access tests")
+testClassInstance.testLuaValue = 5
+testClassInstance.testLuaFunc = function()
+	print("testClassInstance.testLuaFunc() called!")
+end
+
+print("testClassInstance.testValue = " .. testClassInstance.testLuaValue)
+testClassInstance.testLuaFunc()
+
 -- Benchmarks
 printHeader("Benchmarks")
 

@@ -20,6 +20,7 @@ typedef struct luaobjc_object {
 static int get_class(lua_State *L);
 
 static int object_index(lua_State *L);
+static int object_newindex(lua_State *L);
 static int generic_call(lua_State *L);
 
 // Utility methods
@@ -40,6 +41,10 @@ void luaobjc_object_open(lua_State *L) {
 	
 	lua_pushstring(L, "__index");
 	lua_pushcfunction(L, object_index);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "__newindex");
+	lua_pushcfunction(L, object_newindex);
 	lua_settable(L, -3);
 	
 	lua_pop(L, 1); // pop metatable
@@ -188,6 +193,17 @@ static int object_index(lua_State *L) {
 		lua_pushnil(L); // t, k, nil
 		return 1;
 	}
+}
+
+static int object_newindex(lua_State *L) {
+	lua_getfenv(L, 1); // t, k, v, fenv
+	
+	lua_pushvalue(L, 2); // t, k, v, fenv, k
+	lua_pushvalue(L, 3); // t, k, v, fenv, k, v
+	lua_rawset(L, -3); // t, k, v, fenv
+	
+	lua_pop(L, 1); // t, k, v
+	return 1;
 }
 
 static int generic_call(lua_State *L) {
