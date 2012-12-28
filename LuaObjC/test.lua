@@ -113,6 +113,11 @@ objc.strong(instance)
 -- let GC collect it and then release it
 instance = nil
 
+-- Selectors
+printHeader("Selectors")
+local sel = objc.sel("description")
+print("objc.sel('description'): " .. tostring(sel))
+
 -- Benchmarks
 printHeader("Benchmarks")
 
