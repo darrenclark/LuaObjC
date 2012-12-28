@@ -19,6 +19,7 @@ typedef struct luaobjc_object {
 
 static int get_class(lua_State *L);
 static int to_objc(lua_State *L);
+static int to_lua(lua_State *L);
 
 static int object_index(lua_State *L);
 static int object_newindex(lua_State *L);
@@ -60,13 +61,16 @@ void luaobjc_object_open(lua_State *L) {
 	lua_pop(L, 1);
 	
 	
-	
 	lua_pushstring(L, "class");
 	lua_pushcfunction(L, get_class);
 	lua_settable(L, -3);
 	
 	lua_pushstring(L, "to_objc");
 	lua_pushcfunction(L, to_objc);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "to_lua");
+	lua_pushcfunction(L, to_lua);
 	lua_settable(L, -3);
 }
 
@@ -199,6 +203,33 @@ id luaobjc_to_objc(lua_State *L, int idx) {
 	}
 }
 
+void luaobjc_to_lua(lua_State *L, id object) {
+	if (object == nil) {
+		lua_pushnil(L);
+	} else if ([object isKindOfClass:[NSString class]]) {
+		lua_pushstring(L, [object UTF8String]);
+	} else if ([object isKindOfClass:[NSNumber class]]) {
+		lua_pushnumber(L, [object doubleValue]);
+	} else if ([object isKindOfClass:[NSArray class]]) {
+		lua_newtable(L);
+		int i = 1;
+		for (id value in object) {
+			luaobjc_to_lua(L, value);
+			lua_rawseti(L, -2, i);
+			i++;
+		}
+	} else if ([object isKindOfClass:[NSDictionary class]]) {
+		lua_newtable(L);
+		for (id key in object) {
+			luaobjc_to_lua(L, key);
+			luaobjc_to_lua(L, [object objectForKey:key]);
+			lua_rawset(L, -3);
+		}
+	} else {
+		lua_pushnil(L);
+	}
+}
+
 void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len) {
 	size_t *userdata = (size_t *)lua_newuserdata(L, sizeof(size_t) + len);
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
@@ -233,6 +264,12 @@ static int get_class(lua_State *L) {
 static int to_objc(lua_State *L) {
 	id object = luaobjc_to_objc(L, 1);
 	luaobjc_object_push(L, object);
+	return 1;
+}
+
+static int to_lua(lua_State *L) {
+	id object = luaobjc_object_check_or_nil(L, 1);
+	luaobjc_to_lua(L, object);
 	return 1;
 }
 

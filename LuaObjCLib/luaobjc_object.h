@@ -9,7 +9,8 @@
 
 LUAOBJC_EXTERN void luaobjc_object_open(lua_State *L);
 
-// Pushes an Objective C object and converts various classes to Lua types
+// Pushes an Objective C object and converts NSNumber/NSString to lua numbers/strings
+// For converting more complex types like NSArray/NSDictionary, use luobjc_to_lua
 LUAOBJC_EXTERN void luaobjc_object_push(lua_State *L, id object);
 // Pushes an Objective C object WITHOUT converting to Lua types
 LUAOBJC_EXTERN void luaobjc_object_push_strict(lua_State *L, id object);
@@ -22,6 +23,9 @@ LUAOBJC_EXTERN id luaobjc_object_check_or_nil(lua_State *L, int idx);
 
 // Converts a Lua value to an object (including table -> dictionary/array)
 LUAOBJC_EXTERN id luaobjc_to_objc(lua_State *L, int idx);
+// Converts a Objective C object to Lua and pushes it onto the stack
+// This does more conversions than luaobjc_object_push
+LUAOBJC_EXTERN void luaobjc_to_lua(lua_State *L, id object);
 
 // For dealing with return values/args unknown to our Lua bindings. (For example,
 // unions, bitfields, pointers to unknown data types).

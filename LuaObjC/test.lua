@@ -88,6 +88,25 @@ print("Array: " .. objc.to_objc(array):description())
 
 print("tostring: " .. tostring(testClassInstance))
 
+local mutableArray = objc.class("NSMutableArray"):array()
+mutableArray:addObject("Hello")
+mutableArray:addObject("World")
+mutableArray:addObject("!")
+
+local luaArray = objc.to_lua(mutableArray)
+print("Lua array:")
+table.foreach(luaArray, print)
+
+local mutableDict = objc.class("NSMutableDictionary"):dictionary()
+mutableDict:setObject_forKey("Test", "string")
+mutableDict:setObject_forKey(40, "number")
+mutableDict:setObject_forKey(true, "bool")
+
+local luaDict = objc.to_lua(mutableDict)
+print("Lua dictionary:")
+table.foreach(luaDict, print)
+
+
 -- Benchmarks
 printHeader("Benchmarks")
 
