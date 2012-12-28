@@ -14,11 +14,12 @@ const luaobjc_method_info luaobjc_method_info_invald = { NULL, NULL, NULL };
 
 static int get_class(lua_State *L);
 
-static int obj_index(lua_State *L);
-static int obj_call_method(lua_State *L);
+static int object_index(lua_State *L);
+static int generic_call(lua_State *L);
 
 // Utility methods
 static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t len, id target);
+static lua_CFunction check_fastcall(luaobjc_method_info *method_info);
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
@@ -33,7 +34,7 @@ void luaobjc_object_open(lua_State *L) {
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
 	
 	lua_pushstring(L, "__index");
-	lua_pushcfunction(L, obj_index);
+	lua_pushcfunction(L, object_index);
 	lua_settable(L, -3);
 	
 	lua_pop(L, 1); // pop metatable
@@ -126,31 +127,8 @@ static int get_class(lua_State *L) {
 	return 1;
 }
 
-static lua_CFunction check_fastcall(luaobjc_method_info *method_info) {
-	Method m = method_info->method;
-	if (m == NULL)
-		return NULL;
-	
-	int arg_count = method_getNumberOfArguments(m);
-	arg_count -= 2;
-	if (arg_count > luaobjc_fastcall_max_args)
-		return NULL;
-	
-	// we only accept simple types right now, so we only need 1 char
-	char ret[1];
-	method_getReturnType(m, ret, 1);
-	
-	char args[3] = { '\0', '\0', '\0' };
-	for (int i = 0; i < arg_count; i++) {
-		method_getArgumentType(m, i + 2, args + i, 1);
-	}
-	
-	return luaobjc_fastcall_get(*ret, args);
-}
-
-static int obj_index(lua_State *L) {
-	//id object = luaobjc_object_check(L, 1);
-	// we know this is gonna be a object, so screw checking it
+static int object_index(lua_State *L) {
+	// we know this is gonna be a object, so no need to check it
 	id object = lua_touserdata(L, 1);
 	
 	size_t field_len;
@@ -163,7 +141,7 @@ static int obj_index(lua_State *L) {
 		*userdata = method;
 		
 		lua_CFunction fastcall_method = check_fastcall(&method);
-		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : obj_call_method, 1);
+		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1);
 		return 1;
 	} else {
 		NSString *error_msg = [NSString stringWithFormat:@"Unable to resolve method '%s'"
@@ -175,40 +153,7 @@ static int obj_index(lua_State *L) {
 	return 0; // should never reach here
 }
 
-// The whole purpose of the fastcall function is the bypass the NSInvocation song and dance
-// Returns -1 when it can't call the function directly, otherwise returns nargs like Lua functions should
-static inline int fastcall(lua_State *L, luaobjc_method_info *info, const char *type_encoding) {
-	// For now, just test if it matches the format v@:
-	const char *current_pos = type_encoding;
-	current_pos = arg_encoding_skip_type_qualifiers(current_pos);
-	
-	if (current_pos[0] != 'v')
-		return -1;
-	
-	current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
-	current_pos = arg_encoding_skip_stack_numbers(current_pos);
-	
-	current_pos = arg_encoding_skip_type_qualifiers(current_pos);
-	if (current_pos[0] != '@')
-		return -1;
-	
-	current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
-	current_pos = arg_encoding_skip_stack_numbers(current_pos);
-	
-	if (current_pos[0] != ':')
-		return -1;
-	
-	current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
-	current_pos = arg_encoding_skip_stack_numbers(current_pos);
-	
-	if (current_pos[0] != '\0')
-		return -1;
-	
-	((id(*)(id,SEL))objc_msgSend)(info->target, info->selector);
-	return 0;
-}
-
-static int obj_call_method(lua_State *L) {
+static int generic_call(lua_State *L) {
 	const int arg_buf_len = 1024;
 	char arg_buf[arg_buf_len];
 	
@@ -445,6 +390,30 @@ static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t l
 	info.method = m;
 	return info;
 }
+
+// Checks whether a fastcall method exists for the current method_info
+static lua_CFunction check_fastcall(luaobjc_method_info *method_info) {
+	Method m = method_info->method;
+	if (m == NULL)
+		return NULL;
+	
+	int arg_count = method_getNumberOfArguments(m);
+	arg_count -= 2;
+	if (arg_count > luaobjc_fastcall_max_args)
+		return NULL;
+	
+	// we only accept simple types right now, so we only need 1 char
+	char ret[1];
+	method_getReturnType(m, ret, 1);
+	
+	char args[3] = { '\0', '\0', '\0' };
+	for (int i = 0; i < arg_count; i++) {
+		method_getArgumentType(m, i + 2, args + i, 1);
+	}
+	
+	return luaobjc_fastcall_get(*ret, args);
+}
+
 
 // converts an arg from from the lua value at lua_idx into the argument at invocation_idx
 // in invocation
