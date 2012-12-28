@@ -18,6 +18,7 @@ typedef struct luaobjc_object {
 
 
 static int get_class(lua_State *L);
+static int to_objc(lua_State *L);
 
 static int object_index(lua_State *L);
 static int object_newindex(lua_State *L);
@@ -54,8 +55,13 @@ void luaobjc_object_open(lua_State *L) {
 	lua_pop(L, 1);
 	
 	
+	
 	lua_pushstring(L, "class");
 	lua_pushcfunction(L, get_class);
+	lua_settable(L, -3);
+	
+	lua_pushstring(L, "to_objc");
+	lua_pushcfunction(L, to_objc);
 	lua_settable(L, -3);
 }
 
@@ -101,9 +107,15 @@ void luaobjc_object_push_strict(lua_State *L, id object) {
 
 id luaobjc_object_get(lua_State*L, int idx) {
 	luaobjc_object *userdata = lua_touserdata(L, idx);
-	if (userdata == NULL)
-		return NULL;
-	return userdata->object;
+	if (userdata != NULL) {
+		if (lua_getmetatable(L, idx)) {  /* does it have a metatable? */
+			LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);  /* get correct metatable */
+			if (!lua_rawequal(L, -1, -2))  /* not the same? */
+				userdata = NULL;  /* value is a userdata with wrong metatable */
+			lua_pop(L, 2);  /* remove both metatables */
+		}
+	}
+	return userdata != NULL ? userdata->object : nil;
 }
 
 id luaobjc_object_check(lua_State *L, int idx) {
@@ -120,6 +132,67 @@ id luaobjc_object_check_or_nil(lua_State *L, int idx) {
 	return userdata->object;
 }
 
+id luaobjc_to_objc(lua_State *L, int idx) {
+	// TODO: *maybe* handle LUA_TFUNCTION/LUA_TTHREAD -> Objective-C block or NSInvocation???
+	
+	// convert negative idx to a positive one so it doesn't get goofed up after
+	// the stack being changed
+	if (idx < -1)
+		idx = lua_gettop(L) + (idx + 1);
+	
+	int type = lua_type(L, idx);
+	if (type == LUA_TNIL) {
+		return nil;
+	} else if (type == LUA_TBOOLEAN) {
+		return [NSNumber numberWithBool:lua_toboolean(L, idx)];
+	} else if (type == LUA_TNUMBER) {
+		return [NSNumber numberWithDouble:lua_tonumber(L, idx)];
+	} else if (type == LUA_TSTRING) {
+		return [NSString stringWithUTF8String:lua_tostring(L, idx)];
+	} else if (type == LUA_TUSERDATA) {
+		return luaobjc_object_get(L, idx);
+	} else if (type == LUA_TTABLE) {
+		// determine if it is a array or dictionary table
+		lua_rawgeti(L, idx, 1); // check for t[1]
+		BOOL is_dict = lua_isnoneornil(L, -1);
+		lua_pop(L, 1);
+		
+		if (is_dict) {
+			NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+			lua_pushnil(L); // key
+			while (lua_next(L, idx) != 0) {
+				// key is at -2, value is at -1
+				id key = luaobjc_to_objc(L, -2);
+				id value = luaobjc_to_objc(L, -1);
+				
+				if (key == nil) key = [NSNull null];
+				if (value == nil) value = [NSNull null];
+				
+				[dict setObject:value forKey:key];
+				
+				lua_pop(L, 1); // pop value
+			}
+			lua_pop(L, 1); // pop key
+			return dict;
+		} else {
+			NSMutableArray *array = [NSMutableArray array];
+			lua_pushnil(L); // key
+			while (lua_next(L, idx) != 0) {
+				// key is at -2, values is at -1
+				id value = luaobjc_to_objc(L, -1);
+				if (value == nil) value = [NSNull null];
+				
+				[array addObject:value];
+				
+				lua_pop(L, 1);
+			}
+			lua_pop(L, 1); // pop key
+			return array;
+		}
+	} else {
+		return nil;
+	}
+}
 
 void luaobjc_unknown_push(lua_State *L, const void *bytes, size_t len) {
 	size_t *userdata = (size_t *)lua_newuserdata(L, sizeof(size_t) + len);
@@ -149,6 +222,12 @@ static int get_class(lua_State *L) {
 	const char *class_name = luaL_checkstring(L, 1);
 	id class = objc_getClass(class_name);
 	luaobjc_object_push_strict(L, class);
+	return 1;
+}
+
+static int to_objc(lua_State *L) {
+	id object = luaobjc_to_objc(L, 1);
+	luaobjc_object_push(L, object);
 	return 1;
 }
 

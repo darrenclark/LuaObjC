@@ -14,10 +14,14 @@ LUAOBJC_EXTERN void luaobjc_object_push(lua_State *L, id object);
 // Pushes an Objective C object WITHOUT converting to Lua types
 LUAOBJC_EXTERN void luaobjc_object_push_strict(lua_State *L, id object);
 
+// Gets an Objective C object without checking and without any conversions
+LUAOBJC_EXTERN id luaobjc_object_get(lua_State*L, int idx);
 // Checks that an Objective C object lightuserdata is a index 'idx'
 LUAOBJC_EXTERN id luaobjc_object_check(lua_State *L, int idx);
 LUAOBJC_EXTERN id luaobjc_object_check_or_nil(lua_State *L, int idx);
 
+// Converts a Lua value to an object
+LUAOBJC_EXTERN id luaobjc_to_objc(lua_State *L, int idx);
 
 // For dealing with return values/args unknown to our Lua bindings. (For example,
 // unions, bitfields, pointers to unknown data types).

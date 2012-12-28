@@ -69,6 +69,23 @@ end
 print("testClassInstance.testValue = " .. testClassInstance.testLuaValue)
 testClassInstance.testLuaFunc()
 
+
+-- Conversion
+printHeader("Conversions")
+local dict = {}
+dict["five"] = 5
+dict["two"] = 2
+dict["string"] = "Hello, World!"
+dict["bool"] = true
+print("Dict: " .. objc.to_objc(dict):description())
+
+local array = {}
+array[#array+1] = 5
+array[#array+1] = 2
+array[#array+1] = "Hello, World!"
+array[#array+1] = true
+print("Array: " .. objc.to_objc(array):description())
+
 -- Benchmarks
 printHeader("Benchmarks")
 
