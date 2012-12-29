@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		952D3E4C168D6EED00DFCA75 /* luaobjc_fastcall.m in Sources */ = {isa = PBXBuildFile; fileRef = 952D3E4B168D6EED00DFCA75 /* luaobjc_fastcall.m */; };
 		952D3E58168E397C00DFCA75 /* luaobjc_selector.m in Sources */ = {isa = PBXBuildFile; fileRef = 952D3E57168E397B00DFCA75 /* luaobjc_selector.m */; };
+		952D3E69168ED78300DFCA75 /* libffi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 952D3E64168ED70000DFCA75 /* libffi.a */; };
 		954A65F5168BE876007690A8 /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 954A65F4168BE876007690A8 /* libluajit.a */; };
 		954A6600168BF201007690A8 /* luaobjc_sel_cache.m in Sources */ = {isa = PBXBuildFile; fileRef = 954A65FF168BF201007690A8 /* luaobjc_sel_cache.m */; };
 		95F67923168A4DD4004819EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67922168A4DD4004819EE /* UIKit.framework */; };
@@ -25,12 +26,37 @@
 		95F679C6168ADBC7004819EE /* luaobjc_benchmark.m in Sources */ = {isa = PBXBuildFile; fileRef = 95F679C5168ADBC7004819EE /* luaobjc_benchmark.m */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		952D3E63168ED70000DFCA75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F6F980BA147386130008F121;
+			remoteInfo = "libffi iOS";
+		};
+		952D3E65168ED70000DFCA75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6C43CB3D1534E9D100162364;
+			remoteInfo = "libffi OS X";
+		};
+		952D3E67168ED72800DFCA75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = F6F980B9147386130008F121;
+			remoteInfo = "libffi iOS";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		952D3E4B168D6EED00DFCA75 /* luaobjc_fastcall.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_fastcall.m; sourceTree = "<group>"; };
 		952D3E4D168D6F5600DFCA75 /* luaobjc_fastcall.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_fastcall.h; sourceTree = "<group>"; };
 		952D3E56168E397B00DFCA75 /* luaobjc_selector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_selector.h; sourceTree = "<group>"; };
 		952D3E57168E397B00DFCA75 /* luaobjc_selector.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_selector.m; sourceTree = "<group>"; };
 		952D3E5A168E42FD00DFCA75 /* luaobjc_args.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = luaobjc_args.h; sourceTree = "<group>"; };
+		952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libffi.xcodeproj; path = libffi/libffi.xcodeproj; sourceTree = "<group>"; };
 		954A65F4168BE876007690A8 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = SOURCE_ROOT; };
 		954A65FE168BF201007690A8 /* luaobjc_sel_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_sel_cache.h; sourceTree = "<group>"; };
 		954A65FF168BF201007690A8 /* luaobjc_sel_cache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_sel_cache.m; sourceTree = "<group>"; };
@@ -66,15 +92,26 @@
 				95F67925168A4DD4004819EE /* Foundation.framework in Frameworks */,
 				95F67927168A4DD4004819EE /* CoreGraphics.framework in Frameworks */,
 				954A65F5168BE876007690A8 /* libluajit.a in Frameworks */,
+				952D3E69168ED78300DFCA75 /* libffi.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		952D3E5C168ED6FF00DFCA75 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				952D3E64168ED70000DFCA75 /* libffi.a */,
+				952D3E66168ED70000DFCA75 /* libffi.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		95F67913168A4DD4004819EE = {
 			isa = PBXGroup;
 			children = (
+				952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */,
 				95F67997168A515C004819EE /* LuaObjCLib */,
 				95F67928168A4DD4004819EE /* LuaObjC */,
 				95F67921168A4DD4004819EE /* Frameworks */,
@@ -149,12 +186,23 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		952D3E78168EDA8500DFCA75 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		95F6791D168A4DD4004819EE /* LuaObjC */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 95F67936168A4DD4004819EE /* Build configuration list for PBXNativeTarget "LuaObjC" */;
 			buildPhases = (
 				954A65F3168BE69A007690A8 /* Build LuaJit */,
+				952D3E78168EDA8500DFCA75 /* Headers */,
 				95F6791A168A4DD4004819EE /* Sources */,
 				95F6791B168A4DD4004819EE /* Frameworks */,
 				95F6791C168A4DD4004819EE /* Resources */,
@@ -162,6 +210,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				952D3E68168ED72800DFCA75 /* PBXTargetDependency */,
 			);
 			name = LuaObjC;
 			productName = LuaObjC;
@@ -186,12 +235,35 @@
 			mainGroup = 95F67913168A4DD4004819EE;
 			productRefGroup = 95F6791F168A4DD4004819EE /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 952D3E5C168ED6FF00DFCA75 /* Products */;
+					ProjectRef = 952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				95F6791D168A4DD4004819EE /* LuaObjC */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		952D3E64168ED70000DFCA75 /* libffi.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libffi.a;
+			remoteRef = 952D3E63168ED70000DFCA75 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		952D3E66168ED70000DFCA75 /* libffi.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libffi.a;
+			remoteRef = 952D3E65168ED70000DFCA75 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		95F6791C168A4DD4004819EE /* Resources */ = {
@@ -241,6 +313,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		952D3E68168ED72800DFCA75 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "libffi iOS";
+			targetProxy = 952D3E67168ED72800DFCA75 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		95F6792B168A4DD4004819EE /* InfoPlist.strings */ = {
@@ -302,7 +382,10 @@
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "LuaObjC/LuaObjC-Prefix.pch";
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/luajit-2.0/src";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/luajit-2.0/src",
+					"$(SRCROOT)/libffi/ios/include",
+				);
 				INFOPLIST_FILE = "LuaObjC/LuaObjC-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -318,7 +401,10 @@
 			buildSettings = {
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "LuaObjC/LuaObjC-Prefix.pch";
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/luajit-2.0/src";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/luajit-2.0/src",
+					"$(SRCROOT)/libffi/ios/include",
+				);
 				INFOPLIST_FILE = "LuaObjC/LuaObjC-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
