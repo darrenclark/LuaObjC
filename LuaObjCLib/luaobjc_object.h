@@ -44,11 +44,8 @@ LUAOBJC_EXTERN luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size
 typedef struct luaobjc_method_info {
 	id target;
 	SEL selector;
-	Method method;
+	int num_args;
+	const char *sig;
 } luaobjc_method_info;
 
-LUAOBJC_EXTERN_BEGIN
-extern const luaobjc_method_info luaobjc_method_info_invalid;
-LUAOBJC_EXTERN_END
-
-#define LUAOBJC_METHOD_INFO_IS_VALID(info)	(info.target != NULL && info.selector != NULL)
+LUAOBJC_EXTERN const char *luaobjc_method_sig_arg(const char *sig, int idx);
