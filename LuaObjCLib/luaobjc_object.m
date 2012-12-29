@@ -32,7 +32,6 @@ static int generic_call(lua_State *L);
 
 // Utility methods
 static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target);
-static lua_CFunction check_fastcall(luaobjc_method_info *method_info);
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
@@ -320,11 +319,8 @@ static int object_index(lua_State *L) {
 	if (method_info != NULL) {
 		// t, k, fenv, method_info
 		
-		// TODO: Fix fast call
-		// TEMP CHANGE, FAST CALL DOESNT SUPPORT NEW luaobjc_method_info type
-		//lua_CFunction fastcall_method = check_fastcall(method_info);
-		//lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1); // t, k, fenv, cfunc
-		lua_pushcclosure(L, generic_call, 1); // t, k, fenv, cfunc
+		lua_CFunction fastcall_method = luaobjc_fastcall_get(method_info);
+		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1); // t, k, fenv, cfunc
 		
 		// cache it in our fenv
 		lua_pushvalue(L, 2); // t, k, fenv, cfunc, k
@@ -638,31 +634,6 @@ static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target)
 	}
 	
 	return NULL;
-}
-
-// Checks whether a fastcall method exists for the current method_info
-static lua_CFunction check_fastcall(luaobjc_method_info *method_info) {
-	// TODO: Fix fast call!!
-	return NULL;
-	/*Method m = method_info->method;
-	if (m == NULL)
-		return NULL;
-	
-	int arg_count = method_getNumberOfArguments(m);
-	arg_count -= 2;
-	if (arg_count > luaobjc_fastcall_max_args)
-		return NULL;
-	
-	// we only accept simple types right now, so we only need 1 char
-	char ret[1];
-	method_getReturnType(m, ret, 1);
-	
-	char args[3] = { '\0', '\0', '\0' };
-	for (int i = 0; i < arg_count; i++) {
-		method_getArgumentType(m, i + 2, args + i, 1);
-	}
-	
-	return luaobjc_fastcall_get(*ret, args);*/
 }
 
 
