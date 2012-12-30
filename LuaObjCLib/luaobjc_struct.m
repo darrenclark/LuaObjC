@@ -3,10 +3,23 @@
 
 #import "luaobjc_struct.h"
 
+// A struct definition is a table with 4 key/value pairs:
+//	STRUCT_NAME_INDEX -> name of struct
+//	STRUCT_DEF_INDEX -> struct_def userdata
+//	FIELD_NAMES_INDEX -> table mapping field names to indices in struct_def->fields (0 based)
+//	FIELD_ORDER_INDEX -> table mapping order of fields to names (1 based, reference to list of field names passed in)
+// and various metamethods to allow creating structs
+
+
 #define STRUCT_MT "struct_mt"
 #define STRUCT_DEF_MT "struct_def_mt"
 
 #define STRUCT_TABLE_NAME "struct"
+
+#define STRUCT_NAME_INDEX	1
+#define STRUCT_DEF_INDEX	2
+#define FIELD_NAMES_INDEX	3
+#define FIELD_ORDER_INDEX	4
 
 
 typedef struct field_info {
@@ -26,13 +39,17 @@ static int struct_newindex(lua_State *L);
 static int struct_call(lua_State *L);
 
 static int struct_def_call(lua_State *L);
+static int struct_def_tostring(lua_State *L);
 
 static int define_struct(lua_State *L);
 
+
+// pushes objc.struct
 static void push_global_struct(lua_State *L);
 // Attempts to parse the layout string.
-// On success, pushes struct_def userdata AND a table mapping field names -> struct_def.fields indices
-static struct_def *parse_struct(lua_State *L, int layout_index, int names_index);
+// On success, pushes a structure definition table (see top of file). On failure, raises an error
+static struct_def *parse_struct(lua_State *L, int struct_name_index, int layout_index, int names_index);
+// returns size of type represented by 'type', else returns 0 on invalid 'type'
 static size_t check_type(char type);
 
 
@@ -43,6 +60,7 @@ void luaobjc_struct_open(lua_State *L) {
 	lua_pop(L, 1); // pop metatable
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_DEF_MT, STRUCT_DEF_MT);
+	LUAOBJC_ADD_METHOD("__tostring", struct_def_tostring);
 	lua_pop(L, 1);
 	
 	lua_pushstring(L, STRUCT_TABLE_NAME);
@@ -70,6 +88,41 @@ static int struct_def_call(lua_State *L) {
 	return 0;
 }
 
+static int struct_def_tostring(lua_State *L) {
+	lua_rawgeti(L, 1, STRUCT_DEF_INDEX); // arg, struct_def
+	struct_def *def = (struct_def *)lua_touserdata(L, -1);
+	lua_pop(L, 1); // arg
+	
+	int strings = 0; // counts how many strings to concat
+	lua_rawgeti(L, 1, STRUCT_NAME_INDEX); // arg, name
+	strings++;
+	
+	lua_pushfstring(L, " (%d bytes) { ", def->size); // arg, name, bytes
+	strings++;
+	
+	for (int i = 0; i < def->field_count; i++) {
+		lua_rawgeti(L, 1, FIELD_ORDER_INDEX); // arg, name, bytes, ..., field order
+		lua_rawgeti(L, -1, i+1); // arg, name, bytes, ..., field order, field name
+		lua_replace(L, -2); // arg, name, bytes, ..., field name
+		strings++;
+		
+		if (i != def->field_count - 1)
+			lua_pushfstring(L, "(%c), ", def->fields[i].type);
+		else
+			lua_pushfstring(L, "(%c) ", def->fields[i].type);
+		strings++;
+		
+		// arg, name, bytes, ..., field name, field info
+		// field name, field info move into '...' for next iteration...
+		// arg, name, bytes, ...
+	}
+	
+	lua_pushstring(L, "}"); // arg, name, bytes, "}"
+	strings++;
+	
+	lua_concat(L, strings); // arg, return value
+	return 1;
+}
 
 static int define_struct(lua_State *L) {
 	const char *name = luaL_checkstring(L, 1);
@@ -89,10 +142,9 @@ static int define_struct(lua_State *L) {
 	
 	lua_pop(L, 1); // args..., objc.struct
 	
-	parse_struct(L, 2, 3); // args..., objc.struct, def, names_table
-	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_DEF_MT, STRUCT_DEF_MT); // args..., objc.struct, def, names_table, struct_def_mt
-	lua_setmetatable(L, -3); // args..., objc.struct, def, names_table
-	lua_setfenv(L, -2); // args..., objc.struct, def
+	parse_struct(L, 1, 2, 3); // args..., objc.struct, def
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_DEF_MT, STRUCT_DEF_MT); // args..., objc.struct, def, struct_def_mt
+	lua_setmetatable(L, -2); // args..., objc.struct, def
 	
 	lua_pushstring(L, name); // args..., objc.struct, def, name
 	lua_pushvalue(L, -2); // args..., objc.struct, def, name, def
@@ -112,7 +164,7 @@ static void push_global_struct(lua_State *L) {
 	lua_replace(L, -2);
 }
 
-static struct_def *parse_struct(lua_State *L, int layout_index, int names_index) {
+static struct_def *parse_struct(lua_State *L, int struct_name_index, int layout_index, int names_index) {
 	// fields in a struct are aligned to a the size of the type, so we have to be
 	// very careful how we layout the struct. for example:
 	//
@@ -135,33 +187,42 @@ static struct_def *parse_struct(lua_State *L, int layout_index, int names_index)
 		lua_error(L);
 	}
 	
-	struct_def *def = (struct_def *)lua_newuserdata(L, sizeof(struct_def) + sizeof(field_info) * layout_len); // ..., struct_def
-	lua_newtable(L); // table mapping field names to indices - ..., struct_def, names_table
+	if (lua_objlen(L, names_index) != layout_len) {
+		lua_pushstring(L, "struct layout count doesn't match field names count");
+		lua_error(L);
+	}
+	
+	lua_newtable(L); // structure definition table - ..., table
+	struct_def *def = (struct_def *)lua_newuserdata(L, sizeof(struct_def) + sizeof(field_info) * layout_len); // ..., table, struct_def
+	lua_newtable(L); // table mapping field names to indices - ..., table, struct_def, names_table
 	
 	size_t current_offset = 0;
 	
 	for (int i = 0; i < layout_len; i++) {
+		// Get/check type
 		char type = layout[i];
 		size_t size = check_type(type);
 		
 		if (size == 0) {
-			lua_pop(L, 2); // ...
+			lua_pop(L, 3); // ...
 			lua_pushfstring(L, "invalid struct layout character: %c", type);
 			lua_error(L);
 		}
 		
-		lua_pushinteger(L, i + 1); // since lua starts counting at 1 - ..., struct_def, names_table, i
-		lua_gettable(L, names_index); // ..., struct_def, names_table, field_name
+		// Set names_table[name] = i
+		lua_pushinteger(L, i + 1); // since lua starts counting at 1 - ..., table, struct_def, names_table, i + 1
+		lua_gettable(L, names_index); // ..., table, struct_def, names_table, field_name
 		
 		if (lua_type(L, -1) == LUA_TSTRING) {
-			lua_pushinteger(L, i); // ..., struct_def, names_table, field_name, i
-			lua_rawset(L, -3); // ... struct_def, names_table
+			lua_pushinteger(L, i); // ..., table, struct_def, names_table, field_name, i
+			lua_rawset(L, -3); // ..., table, struct_def, names_table
 		} else {
-			lua_pop(L, 3); // ...
+			lua_pop(L, 4); // ...
 			lua_pushfstring(L, "struct field name not found for field '%d'. note: must be a string", i);
 			lua_error(L);
 		}
 		
+		// adjust alignment until aligned correctly
 		while (current_offset % size != 0)
 			current_offset++;
 		
@@ -177,6 +238,21 @@ static struct_def *parse_struct(lua_State *L, int layout_index, int names_index)
 	
 	def->field_count = layout_len;
 	def->size = current_offset;
+	
+	// attach name, struct_def and names_table to table
+	// ..., table, struct_def, names_table
+	lua_pushvalue(L, struct_name_index); // ..., table, struct_def, names_table, name
+	lua_rawseti(L, -4, STRUCT_NAME_INDEX); // ..., table, struct_def, names_table
+	
+	lua_pushvalue(L, -2); // ..., table, struct_def, names_table, struct_def
+	lua_rawseti(L, -4, STRUCT_DEF_INDEX); // ..., table, struct_def, names_table
+	
+	lua_rawseti(L, -3, FIELD_NAMES_INDEX); // ..., table, struct_def
+	lua_pop(L, 1); // ..., table
+	
+	lua_pushvalue(L, names_index); // ..., table, names list table
+	lua_rawseti(L, -2, FIELD_ORDER_INDEX);
+	// ..., table
 	
 	return def;
 }
