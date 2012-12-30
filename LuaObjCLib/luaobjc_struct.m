@@ -53,8 +53,17 @@ static size_t check_type(char type);
 
 // gets a struct_def from a struct instance, otherwise returns NULL
 static struct_def *get_struct_def(lua_State *L, int idx);
+// get struct type name
+static const char *get_struct_name(lua_State *L, int idx);
+// returns the struct_def.fields index for field name @ field_idx in struct @ struct_idx
+// on failure, returns -1
+static int get_struct_field_index(lua_State *L, int struct_idx, int field_idx);
 // sets a field on a struct, returns whether it was successful or not
 static BOOL set_struct_field(lua_State *L, int struct_idx, int field, int value_idx);
+// pushes the value of a field in struct @ struct_idx
+// on success: returns YES and pushes value on stack
+// on failure: returns NO and NO values are pushed
+static BOOL push_struct_field_value(lua_State *L, int struct_idx, int field);
 
 // pushes a new struct instance. may fail if struct type hasn't been registered
 // on success, pushes the new userdata and returns YES
@@ -67,6 +76,8 @@ void luaobjc_struct_open(lua_State *L) {
 	// Remember 'objc' is at the top of the stack!
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_MT, STRUCT_MT);
+	LUAOBJC_ADD_METHOD("__index", struct_index);
+	LUAOBJC_ADD_METHOD("__newindex", struct_newindex);
 	lua_pop(L, 1); // pop metatable
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_DEF_MT, STRUCT_DEF_MT);
@@ -84,10 +95,38 @@ void luaobjc_struct_open(lua_State *L) {
 
 
 static int struct_index(lua_State *L) {
-	return 0;
+	luaL_checkstring(L, 2);
+	
+	int field = get_struct_field_index(L, 1, 2);
+	if (field == -1) {
+		lua_pushfstring(L, "field '%s' not found in struct '%s'", lua_tostring(L, 2), get_struct_name(L, 1));
+		lua_error(L);
+	}
+	
+	if (!push_struct_field_value(L, 1, field)) {
+		lua_pushfstring(L, "unknown error retrieving '%s' from struct '%s'", lua_tostring(L, 2), get_struct_name(L, 1));
+		lua_error(L);
+	}
+	
+	return 1;
 }
 
 static int struct_newindex(lua_State *L) {
+	luaL_checkstring(L, 2);
+	
+	int field = get_struct_field_index(L, 1, 2);
+	if (field == -1) {
+		lua_pushfstring(L, "field '%s' not found in struct '%s'", lua_tostring(L, 2), get_struct_name(L, 1));
+		lua_error(L);
+	}
+	
+	BOOL success = set_struct_field(L, 1, field, 3);
+	if (!success) {
+		lua_pushfstring(L, "invalid type '%s' when setting field '%s' on struct '%s'",
+						lua_typename(L, lua_type(L, 3)), lua_tostring(L, 2), get_struct_name(L, 1));
+		lua_error(L);
+	}
+	
 	return 0;
 }
 
@@ -104,7 +143,8 @@ static int struct_def_call(lua_State *L) {
 	for (int i = 0; i < MIN(num_values, def->field_count); i++) {
 		BOOL success = set_struct_field(L, -1, i, i + 2); // + 2 because struct definition is arg 1
 		if (!success) {
-			lua_pushfstring(L, "invalid type '%s' when creating struct", lua_typename(L, lua_type(L, i + 2)));
+			lua_pushfstring(L, "invalid type '%s' when creating struct '%s'",
+							lua_typename(L, lua_type(L, i + 2)), get_struct_name(L, -1));
 			lua_error(L);
 		}
 	}
@@ -309,6 +349,31 @@ static struct_def *get_struct_def(lua_State *L, int idx) {
 	return def;
 }
 
+static const char *get_struct_name(lua_State *L, int idx) {
+	lua_getfenv(L, idx); // ..., fenv
+	lua_rawgeti(L, -1, STRUCT_NAME_INDEX); // ..., fenv, name
+	
+	const char *name = lua_tostring(L, -1);
+	lua_pop(L, 2); // ...
+	return name;
+}
+
+static int get_struct_field_index(lua_State *L, int struct_idx, int field_idx) {
+	lua_getfenv(L, struct_idx); // ..., fenv
+	lua_rawgeti(L, -1, FIELD_NAMES_INDEX); // ..., fenv, field names
+	
+	lua_pushvalue(L, field_idx); // ..., fenv, field names, field name
+	lua_rawget(L, -2); // ..., fenv, field names, result
+	
+	int result = -1;
+	if (lua_isnumber(L, -1)) {
+		result = lua_tonumber(L, -1);
+	}
+	
+	lua_pop(L, 3); // ...
+	return result;
+}
+
 static BOOL set_struct_field(lua_State *L, int struct_idx, int field, int value_idx) {
 	struct_def *def = get_struct_def(L, struct_idx);
 	if (field >= def->field_count)
@@ -350,6 +415,43 @@ static BOOL set_struct_field(lua_State *L, int struct_idx, int field, int value_
 		case 'Q': *(unsigned long long *)ptr = (unsigned long long)lua_tonumber(L, value_idx); break;
 		case 'f': *(float *)ptr = (float)lua_tonumber(L, value_idx); break;
 		case 'd': *(double *)ptr = (double)lua_tonumber(L, value_idx); break;
+		default: return NO;
+	}
+	
+	return YES;
+}
+
+static BOOL push_struct_field_value(lua_State *L, int struct_idx, int field) {
+	struct_def *def = get_struct_def(L, struct_idx);
+	if (field >= def->field_count)
+		return NO;
+	
+	field_info field_info = def->fields[field];
+	
+	// get the address to read from
+	void *struct_ptr = lua_touserdata(L, struct_idx);
+	void *ptr = (void *)(((char *)struct_ptr) + field_info.offset);
+	
+	// read the value at ptr
+	switch (field_info.type) {
+		case 'c': {
+			char val = *(char *)ptr;
+			if (val == NO || val == YES)
+				lua_pushboolean(L, val);
+			else
+				lua_pushnumber(L, val);
+		} break;
+		case 'i': lua_pushnumber(L, *(int *)ptr); break;
+		case 's': lua_pushnumber(L, *(short *)ptr); break;
+		case 'l': lua_pushnumber(L, *(long *)ptr); break;
+		case 'q': lua_pushnumber(L, *(long long *)ptr); break;
+		case 'C': lua_pushnumber(L, *(unsigned char *)ptr); break;
+		case 'I': lua_pushnumber(L, *(unsigned int *)ptr); break;
+		case 'S': lua_pushnumber(L, *(unsigned short *)ptr); break;
+		case 'L': lua_pushnumber(L, *(unsigned long *)ptr); break;
+		case 'Q': lua_pushnumber(L, *(unsigned long long *)ptr); break;
+		case 'f': lua_pushnumber(L, *(float *)ptr); break;
+		case 'd': lua_pushnumber(L, *(double *)ptr); break;
 		default: return NO;
 	}
 	

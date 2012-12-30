@@ -54,6 +54,10 @@ CGRect = objc.struct.def("CGRect", "ffff", {"x","y","width","height"})
 print(tostring(CGRect))
 
 local myRect = CGRect(10.0, 20.0, 30.0, 40.0)
+for i, field in ipairs{"x", "y", "width", "height"} do
+	myRect[field] = myRect[field] + 5.0
+	print("CGRect", field, myRect[field])
+end
 
 -- Table access test
 printHeader("Table access tests")
