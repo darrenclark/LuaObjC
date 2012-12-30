@@ -10,6 +10,8 @@
 		952D3E4C168D6EED00DFCA75 /* luaobjc_fastcall.m in Sources */ = {isa = PBXBuildFile; fileRef = 952D3E4B168D6EED00DFCA75 /* luaobjc_fastcall.m */; };
 		952D3E58168E397C00DFCA75 /* luaobjc_selector.m in Sources */ = {isa = PBXBuildFile; fileRef = 952D3E57168E397B00DFCA75 /* luaobjc_selector.m */; };
 		952D3E69168ED78300DFCA75 /* libffi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 952D3E64168ED70000DFCA75 /* libffi.a */; };
+		952D3E8D168FA5EF00DFCA75 /* luaobjc_fficall.h in Headers */ = {isa = PBXBuildFile; fileRef = 952D3E8B168FA5EF00DFCA75 /* luaobjc_fficall.h */; };
+		952D3E8E168FA5EF00DFCA75 /* luaobjc_fficall.m in Sources */ = {isa = PBXBuildFile; fileRef = 952D3E8C168FA5EF00DFCA75 /* luaobjc_fficall.m */; };
 		954A65F5168BE876007690A8 /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 954A65F4168BE876007690A8 /* libluajit.a */; };
 		954A6600168BF201007690A8 /* luaobjc_sel_cache.m in Sources */ = {isa = PBXBuildFile; fileRef = 954A65FF168BF201007690A8 /* luaobjc_sel_cache.m */; };
 		95F67923168A4DD4004819EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95F67922168A4DD4004819EE /* UIKit.framework */; };
@@ -57,6 +59,8 @@
 		952D3E57168E397B00DFCA75 /* luaobjc_selector.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_selector.m; sourceTree = "<group>"; };
 		952D3E5A168E42FD00DFCA75 /* luaobjc_args.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = luaobjc_args.h; sourceTree = "<group>"; };
 		952D3E5B168ED6FF00DFCA75 /* libffi.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libffi.xcodeproj; path = libffi/libffi.xcodeproj; sourceTree = "<group>"; };
+		952D3E8B168FA5EF00DFCA75 /* luaobjc_fficall.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_fficall.h; sourceTree = "<group>"; };
+		952D3E8C168FA5EF00DFCA75 /* luaobjc_fficall.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_fficall.m; sourceTree = "<group>"; };
 		954A65F4168BE876007690A8 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = SOURCE_ROOT; };
 		954A65FE168BF201007690A8 /* luaobjc_sel_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaobjc_sel_cache.h; sourceTree = "<group>"; };
 		954A65FF168BF201007690A8 /* luaobjc_sel_cache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = luaobjc_sel_cache.m; sourceTree = "<group>"; };
@@ -173,6 +177,8 @@
 				95F679AA168A5C2C004819EE /* luaobjc_object.m */,
 				952D3E4D168D6F5600DFCA75 /* luaobjc_fastcall.h */,
 				952D3E4B168D6EED00DFCA75 /* luaobjc_fastcall.m */,
+				952D3E8B168FA5EF00DFCA75 /* luaobjc_fficall.h */,
+				952D3E8C168FA5EF00DFCA75 /* luaobjc_fficall.m */,
 				95F679C4168ADBC7004819EE /* luaobjc_benchmark.h */,
 				95F679C5168ADBC7004819EE /* luaobjc_benchmark.m */,
 				954A65FE168BF201007690A8 /* luaobjc_sel_cache.h */,
@@ -191,6 +197,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				952D3E8D168FA5EF00DFCA75 /* luaobjc_fficall.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,6 +316,7 @@
 				954A6600168BF201007690A8 /* luaobjc_sel_cache.m in Sources */,
 				952D3E4C168D6EED00DFCA75 /* luaobjc_fastcall.m in Sources */,
 				952D3E58168E397C00DFCA75 /* luaobjc_selector.m in Sources */,
+				952D3E8E168FA5EF00DFCA75 /* luaobjc_fficall.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

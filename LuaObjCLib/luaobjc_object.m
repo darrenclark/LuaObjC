@@ -5,6 +5,7 @@
 #import "luaobjc_object.h"
 #import "luaobjc_args.h"
 #import "luaobjc_fastcall.h"
+#import "luaobjc_fficall.h"
 #import "luaobjc_sel_cache.h"
 #import "luaobjc_selector.h"
 
@@ -319,8 +320,18 @@ static int object_index(lua_State *L) {
 	if (method_info != NULL) {
 		// t, k, fenv, method_info
 		
-		lua_CFunction fastcall_method = luaobjc_fastcall_get(method_info);
-		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1); // t, k, fenv, cfunc
+		lua_CFunction c_func = luaobjc_fastcall_get(method_info);
+		if (c_func != NULL) {
+			lua_pushcclosure(L, c_func, 1);
+		} else {
+			c_func = luaobjc_fficall_get(method_info);
+			if (c_func != NULL) {
+				lua_pushcclosure(L, c_func, 1);
+			} else {
+				lua_pushcclosure(L, generic_call, 1);
+			}
+		}
+		// t, k, fenv, cfunc
 		
 		// cache it in our fenv
 		lua_pushvalue(L, 2); // t, k, fenv, cfunc, k
