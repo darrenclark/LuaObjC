@@ -53,6 +53,8 @@ printHeader("Struct tests")
 CGRect = objc.struct.def("CGRect", "ffff", {"x","y","width","height"})
 print(tostring(CGRect))
 
+local myRect = CGRect(10.0, 20.0, 30.0, 40.0)
+
 -- Table access test
 printHeader("Table access tests")
 testClassInstance.testLuaValue = 5
