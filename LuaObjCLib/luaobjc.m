@@ -7,8 +7,12 @@
 #import "luaobjc_benchmark.h"
 #import "luaobjc_sel_cache.h"
 #import "luaobjc_selector.h"
+#import "luaobjc_struct.h"
 
 #define LUA_NAMESPACE	"objc"
+
+const char *luaobjc_namespace = LUA_NAMESPACE;
+
 
 void luaobjc_open(lua_State *L) {
 	lua_newtable(L);
@@ -19,6 +23,7 @@ void luaobjc_open(lua_State *L) {
 	luaobjc_benchmark_open(L); // LUAOBJC_REGISTRY_BENCHMARKS
 	luaobjc_sel_cache_open(L); // LUAOBJC_REGISTRY_SEL_CACHE
 	luaobjc_selector_open(L); // LUAOBJC_REGISTRY_SELECTOR_MT
+	luaobjc_struct_open(L); // LUAOBJC_REGISTRY_STRUCT_MT, LUAOBJC_REGISTRY_STRUCT_DEF_MT
 	
 	lua_pop(L, 1); // pop 'objc' global
 }

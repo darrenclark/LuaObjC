@@ -49,9 +49,9 @@ for i, methodName in ipairs(returnTestMethods) do
 end
 
 -- Struct tests
-printHeader("'Unknown' tests")
-local cgRect = testClassInstance:testStruct()
-testClassInstance:testStructPt2(cgRect)
+printHeader("Struct tests")
+CGRect = objc.struct.def("CGRect", "ffff", {"x","y","width","height"})
+print(CGRect, objc.struct.CGRect)
 
 -- Table access test
 printHeader("Table access tests")

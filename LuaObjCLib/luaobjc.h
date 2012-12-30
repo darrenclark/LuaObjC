@@ -69,6 +69,8 @@ LUAOBJC_EXTERN_END
 #define LUAOBJC_REGISTRY_BENCHMARKS		3
 #define LUAOBJC_REGISTRY_SEL_CACHE		4
 #define LUAOBJC_REGISTRY_SELECTOR_MT	5
+#define LUAOBJC_REGISTRY_STRUCT_MT		6
+#define LUAOBJC_REGISTRY_STRUCT_DEF_MT	7
 
 
 // Sets t[lua_name] = func_ptr, where t is the table at the top of the stack
@@ -76,6 +78,10 @@ LUAOBJC_EXTERN_END
 	lua_pushstring(L, lua_name);											\
 	lua_pushcfunction(L, func_ptr);											\
 	lua_settable(L, -3);													\
+
+LUAOBJC_EXTERN_BEGIN
+extern const char *luaobjc_namespace;
+LUAOBJC_EXTERN_END
 
 LUAOBJC_EXTERN void luaobjc_open(lua_State *L);
 LUAOBJC_EXTERN void *luaobjc_checkudata(lua_State *L, int ud, int ref, const char *tname);
