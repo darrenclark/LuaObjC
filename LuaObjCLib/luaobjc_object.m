@@ -5,13 +5,12 @@
 #import "luaobjc_object.h"
 #import "luaobjc_args.h"
 #import "luaobjc_fastcall.h"
+#import "luaobjc_fficall.h"
 #import "luaobjc_sel_cache.h"
 #import "luaobjc_selector.h"
 
 #define OBJECT_MT	"luaobjc_object_mt"
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
-
-const luaobjc_method_info luaobjc_method_info_invald = { NULL, NULL, NULL };
 
 
 typedef struct luaobjc_object {
@@ -33,13 +32,13 @@ static int object_gc(lua_State *L);
 static int generic_call(lua_State *L);
 
 // Utility methods
-static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t len, id target);
-static lua_CFunction check_fastcall(luaobjc_method_info *method_info);
+static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target);
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
 static const char *arg_encoding_skip_type_qualifiers(const char *encoding);
 static const char *arg_encoding_skip_stack_numbers(const char *current_pos);
+static luaobjc_method_info *push_method_info(lua_State *L, id target, SEL sel, int num_args, const char *sig, size_t sig_len);
 
 
 void luaobjc_object_open(lua_State *L) {
@@ -246,6 +245,18 @@ luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size_t len) {
 	return unknown;
 }
 
+const char *luaobjc_method_sig_arg(const char *sig, int idx) {
+	int current_idx = -1;
+	while (*sig != '\0') {
+		if (*sig == '|') {
+			current_idx++;
+			if (current_idx == idx) return sig + 1; // return char after |
+		}
+		sig++;
+	}
+	return sig;
+}
+
 
 static int get_class(lua_State *L) {
 	const char *class_name = luaL_checkstring(L, 1);
@@ -304,17 +315,23 @@ static int object_index(lua_State *L) {
 	// we know this is gonna be a object, so no need to check it
 	id object = luaobjc_object_get(L, 1);
 	
-	size_t field_len;
-	const char *field_name = luaL_checklstring(L, 2, &field_len);
-	
 	// check if it is a method on object
-	luaobjc_method_info method = lookup_method(L, field_name, field_len, object);
-	if (LUAOBJC_METHOD_INFO_IS_VALID(method)) {
-		luaobjc_method_info *userdata = (luaobjc_method_info *)lua_newuserdata(L, sizeof(luaobjc_method_info));
-		*userdata = method;
+	luaobjc_method_info *method_info = lookup_method_info(L, 2, object);
+	if (method_info != NULL) {
+		// t, k, fenv, method_info
 		
-		lua_CFunction fastcall_method = check_fastcall(&method);
-		lua_pushcclosure(L, fastcall_method != NULL ? fastcall_method : generic_call, 1); // t, k, fenv, cfunc
+		lua_CFunction c_func = luaobjc_fastcall_get(method_info);
+		if (c_func != NULL) {
+			lua_pushcclosure(L, c_func, 1);
+		} else {
+			c_func = luaobjc_fficall_get(method_info);
+			if (c_func != NULL) {
+				lua_pushcclosure(L, c_func, 1);
+			} else {
+				lua_pushcclosure(L, generic_call, 1);
+			}
+		}
+		// t, k, fenv, cfunc
 		
 		// cache it in our fenv
 		lua_pushvalue(L, 2); // t, k, fenv, cfunc, k
@@ -363,19 +380,11 @@ static int object_gc(lua_State *L) {
 }
 
 static int generic_call(lua_State *L) {
-	const int arg_buf_len = 1024;
-	char arg_buf[arg_buf_len];
-	
 	luaobjc_method_info *info = (luaobjc_method_info *)lua_touserdata(L, lua_upvalueindex(1));
 	
 	id target = info->target;
 	SEL sel = info->selector;
-	
-	const char *type_encoding = NULL;
-	if (info->method) {
-		type_encoding = method_getTypeEncoding(info->method);
-	}
-	
+		
 	NSMethodSignature *methodSig = [target methodSignatureForSelector:sel];
 	NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSig];
 	
@@ -383,48 +392,17 @@ static int generic_call(lua_State *L) {
 	[invocation setArgument:&sel atIndex:1];
 	
 	// Handle arguments from Lua
-	if (info->method && type_encoding) {
-		const char *current_pos = type_encoding;
-		int current_arg = -1; // since the return value is at the start
-		for (;;) {
-			current_pos = arg_encoding_skip_type_qualifiers(current_pos);
-			
-			// Handle argument
-			if (current_arg >= 2) {
-				convert_lua_arg(L, current_arg, invocation, current_arg, current_pos);
-			}
-			
-			// Move to next argument
-			current_pos = NSGetSizeAndAlignment(current_pos, NULL, NULL);
-			current_pos = arg_encoding_skip_stack_numbers(current_pos);
-			
-			if (current_pos[0] == '\0') // reached end of args
-				break;
-			
-			current_arg++;
-		}
-	} else {
-		NSUInteger arg_count = [methodSig numberOfArguments];
-		// we start at 2 because target/selector are args 0/1. luckily, since
-		// Lua starts counting at 1 and our first arg is the target, the NSInvocation
-		// and Lua arg indexes line up perfectly!
-		NSUInteger current_arg = 2;
-		for (; current_arg < arg_count; current_arg++) {
-			convert_lua_arg(L, current_arg, invocation, current_arg, 
-							[methodSig getArgumentTypeAtIndex:current_arg]);
-		}
+	// we start at 2 because target/selector are args 0/1. luckily, since
+	// Lua starts counting at 1 and the fact that our first arg is the target,
+	// the invocation and Lua arg indexes line up perfectly!
+	NSUInteger current_arg = 2;
+	for (; current_arg < info->num_args; current_arg++) {
+		convert_lua_arg(L, current_arg, invocation, current_arg, luaobjc_method_sig_arg(info->sig, current_arg));
 	}
 	
 	[invocation invoke];
 	
-	// Read the return type information
-	if (info->method) {
-		method_getReturnType(info->method, arg_buf, arg_buf_len);
-	} else {
-		strncpy(arg_buf, [methodSig methodReturnType], arg_buf_len);
-	}
-	
-	const char *return_type = arg_encoding_skip_type_qualifiers(arg_buf);
+	const char *return_type = info->sig; // return value is first type in sig
 	
 	// Return (possibly) a value to Lua
 	switch (return_type[0]) {
@@ -534,6 +512,9 @@ static int generic_call(lua_State *L) {
 }
 
 // Gets a luaobjc_method_info from a target object & lua string
+// FOUND: pushes a luaobjc_method_info userdata on the stack & returns it
+// NOT FOUND: pushes NOTHING and returns NULL
+//
 // When used in Lua to call a method, a selector will contain _'s for :'s, so
 // we need to transform them back into proper objective c selectors
 //
@@ -546,7 +527,10 @@ static int generic_call(lua_State *L) {
 //
 // TODO: implement a way to call selectors that don't conform to this (for example,
 // selectors with _'s in them)
-static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t len, id target) {
+static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target) {
+	size_t len;
+	const char *str = luaL_checklstring(L, idx, &len);
+	
 	char transformed[len + 2]; // include 2 extra so we can append the last ':' optionally
 	memcpy(transformed, str, len);
 	transformed[len] = '\0';
@@ -571,16 +555,63 @@ static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t l
 	
 	SEL sel = luaobjc_get_sel(L, transformed);
 	SEL fallback_sel = NULL;
+	SEL used_sel = NULL;
 	
 	Method m = target_class ? class_getInstanceMethod(target_class, sel) : class_getClassMethod(target, sel);
-	if (m == NULL && !has_args) {
+	if (m != NULL) {
+		used_sel = sel;
+	} else if (m == NULL && !has_args) {
 		// Try again by adding one arg to the end
 		transformed[len] = ':';
 		fallback_sel = luaobjc_get_sel(L, transformed);
 		m = target_class ? class_getInstanceMethod(target_class, fallback_sel) : class_getClassMethod(target, fallback_sel);
+		
+		if (m) used_sel = fallback_sel;
 	}
 	
-	if (m == NULL) {
+	if (m != NULL) {
+		// transform the type encoding into something easily reusable. the goal is
+		// to perform this transformation (using | to split arguments):
+		// v0@4:4  ->  v|@|:  (note, we cannot simply replace numbers w/ |s because
+		// of some certain Objective C type encodings
+		
+		const char *enc = method_getTypeEncoding(m);
+		const char *enc_next;
+		size_t enc_len = strlen(enc);
+		int num_args = method_getNumberOfArguments(m);
+		enc_len += num_args; // extra room for '|'
+		
+		char enc_fixed[enc_len + 1];
+		char *enc_fixed_ptr = enc_fixed; // for our current index into enc_fixed
+		
+		
+		enc = arg_encoding_skip_type_qualifiers(enc);
+		for (;;) {
+			enc_next = NSGetSizeAndAlignment(enc, NULL, NULL);
+			if (enc_next == NULL) break;
+			
+			// copy argument
+			while (enc != enc_next) {
+				*enc_fixed_ptr = *enc;
+				enc_fixed_ptr++;
+				enc++;
+			}
+			
+			enc = arg_encoding_skip_stack_numbers(enc);
+			enc = arg_encoding_skip_type_qualifiers(enc);
+			
+			if (*enc != '\0') {
+				*enc_fixed_ptr = '|';
+				enc_fixed_ptr++;
+			} else {
+				*enc_fixed_ptr = '\0';
+				enc_fixed_ptr++;
+				break;
+			}
+		}
+		
+		return push_method_info(L, target, used_sel, num_args, enc_fixed, strlen(enc_fixed));
+	} else {
 		// We can still see if the method is handled via forwardInvocation:
 		BOOL sel_worked = [target respondsToSelector:sel];
 		BOOL fallback_worked = NO;
@@ -588,44 +619,32 @@ static luaobjc_method_info lookup_method(lua_State *L, const char *str, size_t l
 			fallback_worked = [target respondsToSelector:fallback_sel];
 		
 		if (sel_worked || fallback_worked) {
-			luaobjc_method_info mi;
-			mi.target = target;
-			mi.selector = sel_worked ? sel : fallback_sel;
-			mi.method = NULL;
-			return mi;
+			used_sel = sel_worked ? sel : fallback_sel;
+			
+			// See above for details regarding the format of the method signature string
+			NSMethodSignature *methodSig = [target methodSignatureForSelector:used_sel];
+			NSMutableString *sigStr = [NSMutableString string];
+			
+			const char *arg_str;
+			
+			arg_str = arg_encoding_skip_type_qualifiers([methodSig methodReturnType]);
+			[sigStr appendFormat:@"%s|", arg_str];
+			
+			int arg_count = [methodSig numberOfArguments];
+			for (int arg_idx = 0; arg_idx < arg_count; arg_idx++) {
+				arg_str = arg_encoding_skip_type_qualifiers([methodSig getArgumentTypeAtIndex:arg_idx]);
+				
+				if (arg_idx != arg_count - 1)
+					[sigStr appendFormat:@"%s|", arg_str];
+				else
+					[sigStr appendFormat:@"%s", arg_str];
+			}
+			
+			return push_method_info(L, target, used_sel, arg_count, [sigStr UTF8String], [sigStr length]);
 		}
-		
-		return luaobjc_method_info_invald;
 	}
 	
-	luaobjc_method_info info;
-	info.target = target;
-	info.selector = fallback_sel == NULL ? sel : fallback_sel;
-	info.method = m;
-	return info;
-}
-
-// Checks whether a fastcall method exists for the current method_info
-static lua_CFunction check_fastcall(luaobjc_method_info *method_info) {
-	Method m = method_info->method;
-	if (m == NULL)
-		return NULL;
-	
-	int arg_count = method_getNumberOfArguments(m);
-	arg_count -= 2;
-	if (arg_count > luaobjc_fastcall_max_args)
-		return NULL;
-	
-	// we only accept simple types right now, so we only need 1 char
-	char ret[1];
-	method_getReturnType(m, ret, 1);
-	
-	char args[3] = { '\0', '\0', '\0' };
-	for (int i = 0; i < arg_count; i++) {
-		method_getArgumentType(m, i + 2, args + i, 1);
-	}
-	
-	return luaobjc_fastcall_get(*ret, args);
+	return NULL;
 }
 
 
@@ -633,8 +652,6 @@ static lua_CFunction check_fastcall(luaobjc_method_info *method_info) {
 // in invocation
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 	int invocation_idx, const char *encoding) {
-	
-	encoding = arg_encoding_skip_type_qualifiers(encoding);
 	
 	switch (encoding[0]) {
 		case 'c': {
@@ -748,7 +765,7 @@ static const char *arg_encoding_skip_type_qualifiers(const char *encoding) {
 		}
 	}
 	
-	return NULL;
+	return index;
 }
 
 // Returns a pointer to the character after the weird method_getTypeEncoding numbers
@@ -756,4 +773,18 @@ static const char *arg_encoding_skip_stack_numbers(const char *current_pos) {
 	while (current_pos[0] != '\0' && current_pos[0] >= '0' && current_pos[0] <= '9')
 		current_pos++;
 	return current_pos;
+}
+
+static luaobjc_method_info *push_method_info(lua_State *L, id target, SEL sel, int num_args, const char *sig, size_t sig_len) {
+	size_t size = sizeof(luaobjc_method_info) + sig_len + 1;
+	luaobjc_method_info *pushed = (luaobjc_method_info *)lua_newuserdata(L, size);
+	pushed->target = target;
+	pushed->selector = sel;
+	pushed->num_args = num_args;
+	
+	pushed->sig = (char*)pushed + sizeof(luaobjc_method_info);
+	memcpy((char*)(pushed->sig), sig, sig_len);
+	*(char*)(pushed->sig + sig_len) = '\0';
+	
+	return pushed;
 }

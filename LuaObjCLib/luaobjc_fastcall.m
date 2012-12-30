@@ -39260,12 +39260,15 @@ static int fc_H_HH(lua_State *L) {
 
 int luaobjc_fastcall_max_args = 2;
 
-lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
-	switch (ret) {
+lua_CFunction luaobjc_fastcall_get(luaobjc_method_info *info) {
+	const char *ret = info->sig;
+	const char *arg0 = luaobjc_method_sig_arg(info->sig, 2);
+	const char *arg1 = luaobjc_method_sig_arg(info->sig, 3);
+	switch (*ret) {
 	case 'v':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_cc;
 			case 'i': return fc_v_ci;
 			case 's': return fc_v_cs;
@@ -39285,7 +39288,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_ic;
 			case 'i': return fc_v_ii;
 			case 's': return fc_v_is;
@@ -39305,7 +39308,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_sc;
 			case 'i': return fc_v_si;
 			case 's': return fc_v_ss;
@@ -39325,7 +39328,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_lc;
 			case 'i': return fc_v_li;
 			case 's': return fc_v_ls;
@@ -39345,7 +39348,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_qc;
 			case 'i': return fc_v_qi;
 			case 's': return fc_v_qs;
@@ -39365,7 +39368,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Cc;
 			case 'i': return fc_v_Ci;
 			case 's': return fc_v_Cs;
@@ -39385,7 +39388,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Ic;
 			case 'i': return fc_v_Ii;
 			case 's': return fc_v_Is;
@@ -39405,7 +39408,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Sc;
 			case 'i': return fc_v_Si;
 			case 's': return fc_v_Ss;
@@ -39425,7 +39428,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Lc;
 			case 'i': return fc_v_Li;
 			case 's': return fc_v_Ls;
@@ -39445,7 +39448,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Qc;
 			case 'i': return fc_v_Qi;
 			case 's': return fc_v_Qs;
@@ -39465,7 +39468,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_fc;
 			case 'i': return fc_v_fi;
 			case 's': return fc_v_fs;
@@ -39485,7 +39488,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_dc;
 			case 'i': return fc_v_di;
 			case 's': return fc_v_ds;
@@ -39505,7 +39508,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Bc;
 			case 'i': return fc_v_Bi;
 			case 's': return fc_v_Bs;
@@ -39525,7 +39528,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Ac;
 			case 'i': return fc_v_Ai;
 			case 's': return fc_v_As;
@@ -39545,7 +39548,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_v_Hc;
 			case 'i': return fc_v_Hi;
 			case 's': return fc_v_Hs;
@@ -39568,9 +39571,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'c':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_cc;
 			case 'i': return fc_c_ci;
 			case 's': return fc_c_cs;
@@ -39590,7 +39593,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_ic;
 			case 'i': return fc_c_ii;
 			case 's': return fc_c_is;
@@ -39610,7 +39613,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_sc;
 			case 'i': return fc_c_si;
 			case 's': return fc_c_ss;
@@ -39630,7 +39633,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_lc;
 			case 'i': return fc_c_li;
 			case 's': return fc_c_ls;
@@ -39650,7 +39653,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_qc;
 			case 'i': return fc_c_qi;
 			case 's': return fc_c_qs;
@@ -39670,7 +39673,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Cc;
 			case 'i': return fc_c_Ci;
 			case 's': return fc_c_Cs;
@@ -39690,7 +39693,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Ic;
 			case 'i': return fc_c_Ii;
 			case 's': return fc_c_Is;
@@ -39710,7 +39713,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Sc;
 			case 'i': return fc_c_Si;
 			case 's': return fc_c_Ss;
@@ -39730,7 +39733,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Lc;
 			case 'i': return fc_c_Li;
 			case 's': return fc_c_Ls;
@@ -39750,7 +39753,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Qc;
 			case 'i': return fc_c_Qi;
 			case 's': return fc_c_Qs;
@@ -39770,7 +39773,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_fc;
 			case 'i': return fc_c_fi;
 			case 's': return fc_c_fs;
@@ -39790,7 +39793,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_dc;
 			case 'i': return fc_c_di;
 			case 's': return fc_c_ds;
@@ -39810,7 +39813,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Bc;
 			case 'i': return fc_c_Bi;
 			case 's': return fc_c_Bs;
@@ -39830,7 +39833,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Ac;
 			case 'i': return fc_c_Ai;
 			case 's': return fc_c_As;
@@ -39850,7 +39853,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_c_Hc;
 			case 'i': return fc_c_Hi;
 			case 's': return fc_c_Hs;
@@ -39873,9 +39876,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'i':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_cc;
 			case 'i': return fc_i_ci;
 			case 's': return fc_i_cs;
@@ -39895,7 +39898,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_ic;
 			case 'i': return fc_i_ii;
 			case 's': return fc_i_is;
@@ -39915,7 +39918,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_sc;
 			case 'i': return fc_i_si;
 			case 's': return fc_i_ss;
@@ -39935,7 +39938,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_lc;
 			case 'i': return fc_i_li;
 			case 's': return fc_i_ls;
@@ -39955,7 +39958,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_qc;
 			case 'i': return fc_i_qi;
 			case 's': return fc_i_qs;
@@ -39975,7 +39978,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Cc;
 			case 'i': return fc_i_Ci;
 			case 's': return fc_i_Cs;
@@ -39995,7 +39998,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Ic;
 			case 'i': return fc_i_Ii;
 			case 's': return fc_i_Is;
@@ -40015,7 +40018,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Sc;
 			case 'i': return fc_i_Si;
 			case 's': return fc_i_Ss;
@@ -40035,7 +40038,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Lc;
 			case 'i': return fc_i_Li;
 			case 's': return fc_i_Ls;
@@ -40055,7 +40058,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Qc;
 			case 'i': return fc_i_Qi;
 			case 's': return fc_i_Qs;
@@ -40075,7 +40078,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_fc;
 			case 'i': return fc_i_fi;
 			case 's': return fc_i_fs;
@@ -40095,7 +40098,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_dc;
 			case 'i': return fc_i_di;
 			case 's': return fc_i_ds;
@@ -40115,7 +40118,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Bc;
 			case 'i': return fc_i_Bi;
 			case 's': return fc_i_Bs;
@@ -40135,7 +40138,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Ac;
 			case 'i': return fc_i_Ai;
 			case 's': return fc_i_As;
@@ -40155,7 +40158,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_i_Hc;
 			case 'i': return fc_i_Hi;
 			case 's': return fc_i_Hs;
@@ -40178,9 +40181,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 's':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_cc;
 			case 'i': return fc_s_ci;
 			case 's': return fc_s_cs;
@@ -40200,7 +40203,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_ic;
 			case 'i': return fc_s_ii;
 			case 's': return fc_s_is;
@@ -40220,7 +40223,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_sc;
 			case 'i': return fc_s_si;
 			case 's': return fc_s_ss;
@@ -40240,7 +40243,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_lc;
 			case 'i': return fc_s_li;
 			case 's': return fc_s_ls;
@@ -40260,7 +40263,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_qc;
 			case 'i': return fc_s_qi;
 			case 's': return fc_s_qs;
@@ -40280,7 +40283,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Cc;
 			case 'i': return fc_s_Ci;
 			case 's': return fc_s_Cs;
@@ -40300,7 +40303,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Ic;
 			case 'i': return fc_s_Ii;
 			case 's': return fc_s_Is;
@@ -40320,7 +40323,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Sc;
 			case 'i': return fc_s_Si;
 			case 's': return fc_s_Ss;
@@ -40340,7 +40343,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Lc;
 			case 'i': return fc_s_Li;
 			case 's': return fc_s_Ls;
@@ -40360,7 +40363,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Qc;
 			case 'i': return fc_s_Qi;
 			case 's': return fc_s_Qs;
@@ -40380,7 +40383,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_fc;
 			case 'i': return fc_s_fi;
 			case 's': return fc_s_fs;
@@ -40400,7 +40403,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_dc;
 			case 'i': return fc_s_di;
 			case 's': return fc_s_ds;
@@ -40420,7 +40423,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Bc;
 			case 'i': return fc_s_Bi;
 			case 's': return fc_s_Bs;
@@ -40440,7 +40443,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Ac;
 			case 'i': return fc_s_Ai;
 			case 's': return fc_s_As;
@@ -40460,7 +40463,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_s_Hc;
 			case 'i': return fc_s_Hi;
 			case 's': return fc_s_Hs;
@@ -40483,9 +40486,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'l':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_cc;
 			case 'i': return fc_l_ci;
 			case 's': return fc_l_cs;
@@ -40505,7 +40508,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_ic;
 			case 'i': return fc_l_ii;
 			case 's': return fc_l_is;
@@ -40525,7 +40528,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_sc;
 			case 'i': return fc_l_si;
 			case 's': return fc_l_ss;
@@ -40545,7 +40548,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_lc;
 			case 'i': return fc_l_li;
 			case 's': return fc_l_ls;
@@ -40565,7 +40568,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_qc;
 			case 'i': return fc_l_qi;
 			case 's': return fc_l_qs;
@@ -40585,7 +40588,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Cc;
 			case 'i': return fc_l_Ci;
 			case 's': return fc_l_Cs;
@@ -40605,7 +40608,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Ic;
 			case 'i': return fc_l_Ii;
 			case 's': return fc_l_Is;
@@ -40625,7 +40628,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Sc;
 			case 'i': return fc_l_Si;
 			case 's': return fc_l_Ss;
@@ -40645,7 +40648,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Lc;
 			case 'i': return fc_l_Li;
 			case 's': return fc_l_Ls;
@@ -40665,7 +40668,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Qc;
 			case 'i': return fc_l_Qi;
 			case 's': return fc_l_Qs;
@@ -40685,7 +40688,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_fc;
 			case 'i': return fc_l_fi;
 			case 's': return fc_l_fs;
@@ -40705,7 +40708,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_dc;
 			case 'i': return fc_l_di;
 			case 's': return fc_l_ds;
@@ -40725,7 +40728,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Bc;
 			case 'i': return fc_l_Bi;
 			case 's': return fc_l_Bs;
@@ -40745,7 +40748,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Ac;
 			case 'i': return fc_l_Ai;
 			case 's': return fc_l_As;
@@ -40765,7 +40768,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_l_Hc;
 			case 'i': return fc_l_Hi;
 			case 's': return fc_l_Hs;
@@ -40788,9 +40791,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'q':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_cc;
 			case 'i': return fc_q_ci;
 			case 's': return fc_q_cs;
@@ -40810,7 +40813,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_ic;
 			case 'i': return fc_q_ii;
 			case 's': return fc_q_is;
@@ -40830,7 +40833,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_sc;
 			case 'i': return fc_q_si;
 			case 's': return fc_q_ss;
@@ -40850,7 +40853,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_lc;
 			case 'i': return fc_q_li;
 			case 's': return fc_q_ls;
@@ -40870,7 +40873,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_qc;
 			case 'i': return fc_q_qi;
 			case 's': return fc_q_qs;
@@ -40890,7 +40893,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Cc;
 			case 'i': return fc_q_Ci;
 			case 's': return fc_q_Cs;
@@ -40910,7 +40913,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Ic;
 			case 'i': return fc_q_Ii;
 			case 's': return fc_q_Is;
@@ -40930,7 +40933,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Sc;
 			case 'i': return fc_q_Si;
 			case 's': return fc_q_Ss;
@@ -40950,7 +40953,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Lc;
 			case 'i': return fc_q_Li;
 			case 's': return fc_q_Ls;
@@ -40970,7 +40973,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Qc;
 			case 'i': return fc_q_Qi;
 			case 's': return fc_q_Qs;
@@ -40990,7 +40993,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_fc;
 			case 'i': return fc_q_fi;
 			case 's': return fc_q_fs;
@@ -41010,7 +41013,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_dc;
 			case 'i': return fc_q_di;
 			case 's': return fc_q_ds;
@@ -41030,7 +41033,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Bc;
 			case 'i': return fc_q_Bi;
 			case 's': return fc_q_Bs;
@@ -41050,7 +41053,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Ac;
 			case 'i': return fc_q_Ai;
 			case 's': return fc_q_As;
@@ -41070,7 +41073,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_q_Hc;
 			case 'i': return fc_q_Hi;
 			case 's': return fc_q_Hs;
@@ -41093,9 +41096,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'C':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_cc;
 			case 'i': return fc_C_ci;
 			case 's': return fc_C_cs;
@@ -41115,7 +41118,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_ic;
 			case 'i': return fc_C_ii;
 			case 's': return fc_C_is;
@@ -41135,7 +41138,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_sc;
 			case 'i': return fc_C_si;
 			case 's': return fc_C_ss;
@@ -41155,7 +41158,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_lc;
 			case 'i': return fc_C_li;
 			case 's': return fc_C_ls;
@@ -41175,7 +41178,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_qc;
 			case 'i': return fc_C_qi;
 			case 's': return fc_C_qs;
@@ -41195,7 +41198,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Cc;
 			case 'i': return fc_C_Ci;
 			case 's': return fc_C_Cs;
@@ -41215,7 +41218,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Ic;
 			case 'i': return fc_C_Ii;
 			case 's': return fc_C_Is;
@@ -41235,7 +41238,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Sc;
 			case 'i': return fc_C_Si;
 			case 's': return fc_C_Ss;
@@ -41255,7 +41258,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Lc;
 			case 'i': return fc_C_Li;
 			case 's': return fc_C_Ls;
@@ -41275,7 +41278,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Qc;
 			case 'i': return fc_C_Qi;
 			case 's': return fc_C_Qs;
@@ -41295,7 +41298,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_fc;
 			case 'i': return fc_C_fi;
 			case 's': return fc_C_fs;
@@ -41315,7 +41318,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_dc;
 			case 'i': return fc_C_di;
 			case 's': return fc_C_ds;
@@ -41335,7 +41338,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Bc;
 			case 'i': return fc_C_Bi;
 			case 's': return fc_C_Bs;
@@ -41355,7 +41358,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Ac;
 			case 'i': return fc_C_Ai;
 			case 's': return fc_C_As;
@@ -41375,7 +41378,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_C_Hc;
 			case 'i': return fc_C_Hi;
 			case 's': return fc_C_Hs;
@@ -41398,9 +41401,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'I':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_cc;
 			case 'i': return fc_I_ci;
 			case 's': return fc_I_cs;
@@ -41420,7 +41423,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_ic;
 			case 'i': return fc_I_ii;
 			case 's': return fc_I_is;
@@ -41440,7 +41443,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_sc;
 			case 'i': return fc_I_si;
 			case 's': return fc_I_ss;
@@ -41460,7 +41463,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_lc;
 			case 'i': return fc_I_li;
 			case 's': return fc_I_ls;
@@ -41480,7 +41483,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_qc;
 			case 'i': return fc_I_qi;
 			case 's': return fc_I_qs;
@@ -41500,7 +41503,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Cc;
 			case 'i': return fc_I_Ci;
 			case 's': return fc_I_Cs;
@@ -41520,7 +41523,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Ic;
 			case 'i': return fc_I_Ii;
 			case 's': return fc_I_Is;
@@ -41540,7 +41543,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Sc;
 			case 'i': return fc_I_Si;
 			case 's': return fc_I_Ss;
@@ -41560,7 +41563,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Lc;
 			case 'i': return fc_I_Li;
 			case 's': return fc_I_Ls;
@@ -41580,7 +41583,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Qc;
 			case 'i': return fc_I_Qi;
 			case 's': return fc_I_Qs;
@@ -41600,7 +41603,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_fc;
 			case 'i': return fc_I_fi;
 			case 's': return fc_I_fs;
@@ -41620,7 +41623,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_dc;
 			case 'i': return fc_I_di;
 			case 's': return fc_I_ds;
@@ -41640,7 +41643,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Bc;
 			case 'i': return fc_I_Bi;
 			case 's': return fc_I_Bs;
@@ -41660,7 +41663,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Ac;
 			case 'i': return fc_I_Ai;
 			case 's': return fc_I_As;
@@ -41680,7 +41683,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_I_Hc;
 			case 'i': return fc_I_Hi;
 			case 's': return fc_I_Hs;
@@ -41703,9 +41706,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'S':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_cc;
 			case 'i': return fc_S_ci;
 			case 's': return fc_S_cs;
@@ -41725,7 +41728,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_ic;
 			case 'i': return fc_S_ii;
 			case 's': return fc_S_is;
@@ -41745,7 +41748,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_sc;
 			case 'i': return fc_S_si;
 			case 's': return fc_S_ss;
@@ -41765,7 +41768,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_lc;
 			case 'i': return fc_S_li;
 			case 's': return fc_S_ls;
@@ -41785,7 +41788,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_qc;
 			case 'i': return fc_S_qi;
 			case 's': return fc_S_qs;
@@ -41805,7 +41808,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Cc;
 			case 'i': return fc_S_Ci;
 			case 's': return fc_S_Cs;
@@ -41825,7 +41828,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Ic;
 			case 'i': return fc_S_Ii;
 			case 's': return fc_S_Is;
@@ -41845,7 +41848,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Sc;
 			case 'i': return fc_S_Si;
 			case 's': return fc_S_Ss;
@@ -41865,7 +41868,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Lc;
 			case 'i': return fc_S_Li;
 			case 's': return fc_S_Ls;
@@ -41885,7 +41888,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Qc;
 			case 'i': return fc_S_Qi;
 			case 's': return fc_S_Qs;
@@ -41905,7 +41908,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_fc;
 			case 'i': return fc_S_fi;
 			case 's': return fc_S_fs;
@@ -41925,7 +41928,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_dc;
 			case 'i': return fc_S_di;
 			case 's': return fc_S_ds;
@@ -41945,7 +41948,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Bc;
 			case 'i': return fc_S_Bi;
 			case 's': return fc_S_Bs;
@@ -41965,7 +41968,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Ac;
 			case 'i': return fc_S_Ai;
 			case 's': return fc_S_As;
@@ -41985,7 +41988,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_S_Hc;
 			case 'i': return fc_S_Hi;
 			case 's': return fc_S_Hs;
@@ -42008,9 +42011,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'L':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_cc;
 			case 'i': return fc_L_ci;
 			case 's': return fc_L_cs;
@@ -42030,7 +42033,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_ic;
 			case 'i': return fc_L_ii;
 			case 's': return fc_L_is;
@@ -42050,7 +42053,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_sc;
 			case 'i': return fc_L_si;
 			case 's': return fc_L_ss;
@@ -42070,7 +42073,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_lc;
 			case 'i': return fc_L_li;
 			case 's': return fc_L_ls;
@@ -42090,7 +42093,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_qc;
 			case 'i': return fc_L_qi;
 			case 's': return fc_L_qs;
@@ -42110,7 +42113,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Cc;
 			case 'i': return fc_L_Ci;
 			case 's': return fc_L_Cs;
@@ -42130,7 +42133,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Ic;
 			case 'i': return fc_L_Ii;
 			case 's': return fc_L_Is;
@@ -42150,7 +42153,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Sc;
 			case 'i': return fc_L_Si;
 			case 's': return fc_L_Ss;
@@ -42170,7 +42173,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Lc;
 			case 'i': return fc_L_Li;
 			case 's': return fc_L_Ls;
@@ -42190,7 +42193,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Qc;
 			case 'i': return fc_L_Qi;
 			case 's': return fc_L_Qs;
@@ -42210,7 +42213,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_fc;
 			case 'i': return fc_L_fi;
 			case 's': return fc_L_fs;
@@ -42230,7 +42233,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_dc;
 			case 'i': return fc_L_di;
 			case 's': return fc_L_ds;
@@ -42250,7 +42253,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Bc;
 			case 'i': return fc_L_Bi;
 			case 's': return fc_L_Bs;
@@ -42270,7 +42273,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Ac;
 			case 'i': return fc_L_Ai;
 			case 's': return fc_L_As;
@@ -42290,7 +42293,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_L_Hc;
 			case 'i': return fc_L_Hi;
 			case 's': return fc_L_Hs;
@@ -42313,9 +42316,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'Q':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_cc;
 			case 'i': return fc_Q_ci;
 			case 's': return fc_Q_cs;
@@ -42335,7 +42338,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_ic;
 			case 'i': return fc_Q_ii;
 			case 's': return fc_Q_is;
@@ -42355,7 +42358,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_sc;
 			case 'i': return fc_Q_si;
 			case 's': return fc_Q_ss;
@@ -42375,7 +42378,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_lc;
 			case 'i': return fc_Q_li;
 			case 's': return fc_Q_ls;
@@ -42395,7 +42398,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_qc;
 			case 'i': return fc_Q_qi;
 			case 's': return fc_Q_qs;
@@ -42415,7 +42418,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Cc;
 			case 'i': return fc_Q_Ci;
 			case 's': return fc_Q_Cs;
@@ -42435,7 +42438,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Ic;
 			case 'i': return fc_Q_Ii;
 			case 's': return fc_Q_Is;
@@ -42455,7 +42458,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Sc;
 			case 'i': return fc_Q_Si;
 			case 's': return fc_Q_Ss;
@@ -42475,7 +42478,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Lc;
 			case 'i': return fc_Q_Li;
 			case 's': return fc_Q_Ls;
@@ -42495,7 +42498,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Qc;
 			case 'i': return fc_Q_Qi;
 			case 's': return fc_Q_Qs;
@@ -42515,7 +42518,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_fc;
 			case 'i': return fc_Q_fi;
 			case 's': return fc_Q_fs;
@@ -42535,7 +42538,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_dc;
 			case 'i': return fc_Q_di;
 			case 's': return fc_Q_ds;
@@ -42555,7 +42558,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Bc;
 			case 'i': return fc_Q_Bi;
 			case 's': return fc_Q_Bs;
@@ -42575,7 +42578,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Ac;
 			case 'i': return fc_Q_Ai;
 			case 's': return fc_Q_As;
@@ -42595,7 +42598,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_Q_Hc;
 			case 'i': return fc_Q_Hi;
 			case 's': return fc_Q_Hs;
@@ -42618,9 +42621,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'f':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_cc;
 			case 'i': return fc_f_ci;
 			case 's': return fc_f_cs;
@@ -42640,7 +42643,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_ic;
 			case 'i': return fc_f_ii;
 			case 's': return fc_f_is;
@@ -42660,7 +42663,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_sc;
 			case 'i': return fc_f_si;
 			case 's': return fc_f_ss;
@@ -42680,7 +42683,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_lc;
 			case 'i': return fc_f_li;
 			case 's': return fc_f_ls;
@@ -42700,7 +42703,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_qc;
 			case 'i': return fc_f_qi;
 			case 's': return fc_f_qs;
@@ -42720,7 +42723,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Cc;
 			case 'i': return fc_f_Ci;
 			case 's': return fc_f_Cs;
@@ -42740,7 +42743,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Ic;
 			case 'i': return fc_f_Ii;
 			case 's': return fc_f_Is;
@@ -42760,7 +42763,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Sc;
 			case 'i': return fc_f_Si;
 			case 's': return fc_f_Ss;
@@ -42780,7 +42783,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Lc;
 			case 'i': return fc_f_Li;
 			case 's': return fc_f_Ls;
@@ -42800,7 +42803,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Qc;
 			case 'i': return fc_f_Qi;
 			case 's': return fc_f_Qs;
@@ -42820,7 +42823,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_fc;
 			case 'i': return fc_f_fi;
 			case 's': return fc_f_fs;
@@ -42840,7 +42843,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_dc;
 			case 'i': return fc_f_di;
 			case 's': return fc_f_ds;
@@ -42860,7 +42863,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Bc;
 			case 'i': return fc_f_Bi;
 			case 's': return fc_f_Bs;
@@ -42880,7 +42883,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Ac;
 			case 'i': return fc_f_Ai;
 			case 's': return fc_f_As;
@@ -42900,7 +42903,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_f_Hc;
 			case 'i': return fc_f_Hi;
 			case 's': return fc_f_Hs;
@@ -42923,9 +42926,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'd':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_cc;
 			case 'i': return fc_d_ci;
 			case 's': return fc_d_cs;
@@ -42945,7 +42948,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_ic;
 			case 'i': return fc_d_ii;
 			case 's': return fc_d_is;
@@ -42965,7 +42968,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_sc;
 			case 'i': return fc_d_si;
 			case 's': return fc_d_ss;
@@ -42985,7 +42988,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_lc;
 			case 'i': return fc_d_li;
 			case 's': return fc_d_ls;
@@ -43005,7 +43008,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_qc;
 			case 'i': return fc_d_qi;
 			case 's': return fc_d_qs;
@@ -43025,7 +43028,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Cc;
 			case 'i': return fc_d_Ci;
 			case 's': return fc_d_Cs;
@@ -43045,7 +43048,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Ic;
 			case 'i': return fc_d_Ii;
 			case 's': return fc_d_Is;
@@ -43065,7 +43068,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Sc;
 			case 'i': return fc_d_Si;
 			case 's': return fc_d_Ss;
@@ -43085,7 +43088,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Lc;
 			case 'i': return fc_d_Li;
 			case 's': return fc_d_Ls;
@@ -43105,7 +43108,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Qc;
 			case 'i': return fc_d_Qi;
 			case 's': return fc_d_Qs;
@@ -43125,7 +43128,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_fc;
 			case 'i': return fc_d_fi;
 			case 's': return fc_d_fs;
@@ -43145,7 +43148,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_dc;
 			case 'i': return fc_d_di;
 			case 's': return fc_d_ds;
@@ -43165,7 +43168,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Bc;
 			case 'i': return fc_d_Bi;
 			case 's': return fc_d_Bs;
@@ -43185,7 +43188,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Ac;
 			case 'i': return fc_d_Ai;
 			case 's': return fc_d_As;
@@ -43205,7 +43208,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_d_Hc;
 			case 'i': return fc_d_Hi;
 			case 's': return fc_d_Hs;
@@ -43228,9 +43231,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case 'B':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_cc;
 			case 'i': return fc_B_ci;
 			case 's': return fc_B_cs;
@@ -43250,7 +43253,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_ic;
 			case 'i': return fc_B_ii;
 			case 's': return fc_B_is;
@@ -43270,7 +43273,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_sc;
 			case 'i': return fc_B_si;
 			case 's': return fc_B_ss;
@@ -43290,7 +43293,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_lc;
 			case 'i': return fc_B_li;
 			case 's': return fc_B_ls;
@@ -43310,7 +43313,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_qc;
 			case 'i': return fc_B_qi;
 			case 's': return fc_B_qs;
@@ -43330,7 +43333,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Cc;
 			case 'i': return fc_B_Ci;
 			case 's': return fc_B_Cs;
@@ -43350,7 +43353,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Ic;
 			case 'i': return fc_B_Ii;
 			case 's': return fc_B_Is;
@@ -43370,7 +43373,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Sc;
 			case 'i': return fc_B_Si;
 			case 's': return fc_B_Ss;
@@ -43390,7 +43393,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Lc;
 			case 'i': return fc_B_Li;
 			case 's': return fc_B_Ls;
@@ -43410,7 +43413,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Qc;
 			case 'i': return fc_B_Qi;
 			case 's': return fc_B_Qs;
@@ -43430,7 +43433,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_fc;
 			case 'i': return fc_B_fi;
 			case 's': return fc_B_fs;
@@ -43450,7 +43453,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_dc;
 			case 'i': return fc_B_di;
 			case 's': return fc_B_ds;
@@ -43470,7 +43473,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Bc;
 			case 'i': return fc_B_Bi;
 			case 's': return fc_B_Bs;
@@ -43490,7 +43493,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Ac;
 			case 'i': return fc_B_Ai;
 			case 's': return fc_B_As;
@@ -43510,7 +43513,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_B_Hc;
 			case 'i': return fc_B_Hi;
 			case 's': return fc_B_Hs;
@@ -43533,9 +43536,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case '@':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_cc;
 			case 'i': return fc_A_ci;
 			case 's': return fc_A_cs;
@@ -43555,7 +43558,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_ic;
 			case 'i': return fc_A_ii;
 			case 's': return fc_A_is;
@@ -43575,7 +43578,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_sc;
 			case 'i': return fc_A_si;
 			case 's': return fc_A_ss;
@@ -43595,7 +43598,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_lc;
 			case 'i': return fc_A_li;
 			case 's': return fc_A_ls;
@@ -43615,7 +43618,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_qc;
 			case 'i': return fc_A_qi;
 			case 's': return fc_A_qs;
@@ -43635,7 +43638,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Cc;
 			case 'i': return fc_A_Ci;
 			case 's': return fc_A_Cs;
@@ -43655,7 +43658,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Ic;
 			case 'i': return fc_A_Ii;
 			case 's': return fc_A_Is;
@@ -43675,7 +43678,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Sc;
 			case 'i': return fc_A_Si;
 			case 's': return fc_A_Ss;
@@ -43695,7 +43698,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Lc;
 			case 'i': return fc_A_Li;
 			case 's': return fc_A_Ls;
@@ -43715,7 +43718,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Qc;
 			case 'i': return fc_A_Qi;
 			case 's': return fc_A_Qs;
@@ -43735,7 +43738,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_fc;
 			case 'i': return fc_A_fi;
 			case 's': return fc_A_fs;
@@ -43755,7 +43758,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_dc;
 			case 'i': return fc_A_di;
 			case 's': return fc_A_ds;
@@ -43775,7 +43778,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Bc;
 			case 'i': return fc_A_Bi;
 			case 's': return fc_A_Bs;
@@ -43795,7 +43798,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Ac;
 			case 'i': return fc_A_Ai;
 			case 's': return fc_A_As;
@@ -43815,7 +43818,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_A_Hc;
 			case 'i': return fc_A_Hi;
 			case 's': return fc_A_Hs;
@@ -43838,9 +43841,9 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 		default: return NULL;
 		}
 	case '#':
-		switch (args[0]) {
+		switch (*arg0) {
 		case 'c':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_cc;
 			case 'i': return fc_H_ci;
 			case 's': return fc_H_cs;
@@ -43860,7 +43863,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'i':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_ic;
 			case 'i': return fc_H_ii;
 			case 's': return fc_H_is;
@@ -43880,7 +43883,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 's':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_sc;
 			case 'i': return fc_H_si;
 			case 's': return fc_H_ss;
@@ -43900,7 +43903,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'l':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_lc;
 			case 'i': return fc_H_li;
 			case 's': return fc_H_ls;
@@ -43920,7 +43923,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_qc;
 			case 'i': return fc_H_qi;
 			case 's': return fc_H_qs;
@@ -43940,7 +43943,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'C':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Cc;
 			case 'i': return fc_H_Ci;
 			case 's': return fc_H_Cs;
@@ -43960,7 +43963,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'I':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Ic;
 			case 'i': return fc_H_Ii;
 			case 's': return fc_H_Is;
@@ -43980,7 +43983,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'S':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Sc;
 			case 'i': return fc_H_Si;
 			case 's': return fc_H_Ss;
@@ -44000,7 +44003,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'L':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Lc;
 			case 'i': return fc_H_Li;
 			case 's': return fc_H_Ls;
@@ -44020,7 +44023,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'Q':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Qc;
 			case 'i': return fc_H_Qi;
 			case 's': return fc_H_Qs;
@@ -44040,7 +44043,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'f':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_fc;
 			case 'i': return fc_H_fi;
 			case 's': return fc_H_fs;
@@ -44060,7 +44063,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'd':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_dc;
 			case 'i': return fc_H_di;
 			case 's': return fc_H_ds;
@@ -44080,7 +44083,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case 'B':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Bc;
 			case 'i': return fc_H_Bi;
 			case 's': return fc_H_Bs;
@@ -44100,7 +44103,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '@':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Ac;
 			case 'i': return fc_H_Ai;
 			case 's': return fc_H_As;
@@ -44120,7 +44123,7 @@ lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {
 			default: return NULL;
 			}
 		case '#':
-			switch (args[1]) {
+			switch (*arg1) {
 			case 'c': return fc_H_Hc;
 			case 'i': return fc_H_Hi;
 			case 's': return fc_H_Hs;

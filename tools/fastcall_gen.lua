@@ -182,7 +182,7 @@ local function generate_arg_jump_table(ret, current_args)
 	local indent = "\t"
 	for i = 0, #current_args do indent = indent .. "\t" end
 
-	print(indent .. "switch (args[" .. tostring(#current_args) .. "]) {")
+	print(indent .. "switch (*arg" .. tostring(#current_args) .. ") {")
 
 	for i, arg_type in ipairs(TYPES) do
 		if #current_args + 1 < MAX_ARGS then
@@ -204,7 +204,7 @@ end
 
 local function generate_ret_jump_table()
 	local indent = "\t"
-	print(indent .. "switch (ret) {")
+	print(indent .. "switch (*ret) {")
 	
 	print(indent .. "case 'v':")
 	generate_arg_jump_table("v", {})
@@ -218,6 +218,10 @@ end
 
 print("int luaobjc_fastcall_max_args = " .. tostring(MAX_ARGS) .. ";")
 print("")
-print("lua_CFunction luaobjc_fastcall_get(char ret, const char *args) {")
+print("lua_CFunction luaobjc_fastcall_get(luaobjc_method_info *info) {")
+print("\tconst char *ret = info->sig;")
+for i = 0, MAX_ARGS - 1 do
+	print("\tconst char *arg" .. i .. " = luaobjc_method_sig_arg(info->sig, " .. (i+2) .. ");")
+end
 generate_ret_jump_table()
 print("}")

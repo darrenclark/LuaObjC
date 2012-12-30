@@ -3,8 +3,9 @@
 
 
 #import "luaobjc.h"
+#import "luaobjc_object.h"
 
 LUAOBJC_EXTERN_BEGIN
 extern int luaobjc_fastcall_max_args;
-lua_CFunction luaobjc_fastcall_get(char ret, const char *args);
+lua_CFunction luaobjc_fastcall_get(luaobjc_method_info *info);
 LUAOBJC_EXTERN_END

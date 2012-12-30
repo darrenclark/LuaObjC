@@ -121,11 +121,42 @@ printHeader("Benchmarks")
 
 for j = 1, 5 do
 	collectgarbage("stop")
-	objc.benchmark_start("Func call speed")
+	objc.benchmark_start("Func lookup speed")
+	for i = 0, 5000 do
+		local method = testClassInstance.emptyMethod
+		testClassInstance.emptyMethod = nil
+	end
+	objc.benchmark_end("Func lookup speed")
+	collectgarbage("collect")
+end
+
+for j = 1, 5 do
+	collectgarbage("stop")
+	objc.benchmark_start("Fast call speed")
 	for i = 0, 5000 do
 		testClassInstance:emptyMethod()
 	end
-	objc.benchmark_end("Func call speed")
+	objc.benchmark_end("Fast call speed")
+	collectgarbage("collect")
+end
+
+for j = 1, 5 do
+	collectgarbage("stop")
+	objc.benchmark_start("FFI call speed")
+	for i = 0, 5000 do
+		testClassInstance:charStringTest()
+	end
+	objc.benchmark_end("FFI call speed")
+	collectgarbage("collect")
+end
+
+for j = 1, 5 do
+	collectgarbage("stop")
+	objc.benchmark_start("Slow call speed")
+	for i = 0, 5000 do
+		testClassInstance:testStruct()
+	end
+	objc.benchmark_end("Slow call speed")
 	collectgarbage("collect")
 end
 
