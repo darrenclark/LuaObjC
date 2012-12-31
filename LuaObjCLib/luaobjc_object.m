@@ -758,13 +758,19 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 			[invocation setArgument:&sel atIndex:invocation_idx];
 		} break;
 		case '{': {
-			size_t enc_len = luaobjc_method_sig_arg_len(encoding);
-			char struct_name[enc_len]; // no need to +1 because it already won't count '{'
-			luaobjc_method_sig_struct_name(encoding, struct_name);
-			
-			void *val = luaobjc_struct_check(L, lua_idx, struct_name);
-			[invocation setArgument:val atIndex:invocation_idx];
-		} break;
+			// we want to still handle 'unknown' types, so check if we are for sure
+			// dealing with a struct before getting too far along
+			if (luaobjc_struct_is_struct(L, lua_idx)) {
+				size_t enc_len = luaobjc_method_sig_arg_len(encoding);
+				char struct_name[enc_len]; // no need to +1 because it already won't count '{'
+				luaobjc_method_sig_struct_name(encoding, struct_name);
+				
+				void *val = luaobjc_struct_check(L, lua_idx, struct_name);
+				[invocation setArgument:val atIndex:invocation_idx];
+				break;
+			} // *** else, fallthrough to 'default'
+		}
+		// BE CAREFUL! case '{' falls through to here!
 		default: {
 			if (encoding[0] == '^' && lua_isnil(L, lua_idx)) {
 				void *val = NULL;

@@ -17,6 +17,9 @@
 - (SEL)testSelector;
 - (id)testSelectorPt2;
 
+- (CGAffineTransform)unknownPt1;
+- (void)unknownPt2:(CGAffineTransform)unknown;
+
 - (void)printRect:(CGRect)rect;
 
 - (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method;

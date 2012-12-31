@@ -116,6 +116,19 @@ void *luaobjc_struct_check(lua_State *L, int idx, const char *struct_name) {
 	return userdata;
 }
 
+BOOL luaobjc_struct_is_struct(lua_State *L, int idx) {
+	BOOL ret_val = NO;
+	void *ud = lua_touserdata(L, idx);
+	if (ud != NULL) {
+		if (lua_getmetatable(L, idx)) { // ..., mt
+			LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_MT, STRUCT_MT); // ..., mt, struct_mt
+			ret_val = lua_rawequal(L, -2, -1);
+			lua_pop(L, 2); // ...
+		}
+	}
+	return ret_val;
+}
+
 void *luaobjc_struct_push(lua_State *L, const char *struct_name, void *data) {
 	if (push_new_struct(L, struct_name)) {
 		void *structptr = lua_touserdata(L, -1);

@@ -62,6 +62,8 @@ end
 testClassInstance:printRect(myRect)
 testClassInstance:printRect(testClassInstance:testStruct())
 
+testClassInstance:unknownPt2(testClassInstance:unknownPt1())
+
 -- Table access test
 printHeader("Table access tests")
 testClassInstance.testLuaValue = 5

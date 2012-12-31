@@ -31,6 +31,14 @@
 	return nil;
 }
 
+- (CGAffineTransform)unknownPt1 {
+	return CGAffineTransformIdentity;
+}
+
+- (void)unknownPt2:(CGAffineTransform)unknown {
+	NSLog(@"%@", NSStringFromCGAffineTransform(unknown));
+}
+
 - (void)printRect:(CGRect)rect {
 	NSLog(@"%@", NSStringFromCGRect(rect));
 }
