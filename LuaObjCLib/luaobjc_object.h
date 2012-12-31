@@ -48,4 +48,11 @@ typedef struct luaobjc_method_info {
 	const char *sig;
 } luaobjc_method_info;
 
+// returns a pointer to the beginning of argument at 'idx' in 'sig'
 LUAOBJC_EXTERN const char *luaobjc_method_sig_arg(const char *sig, int idx);
+// returns the length of an arg in sig (when using the v|@|: format)
+LUAOBJC_EXTERN size_t luaobjc_method_sig_arg_len(const char *sig);
+// attempts to read a struct name from 'struct_arg'. 'struct_arg' should point to the opening '{',
+// and 'ret' should point to a string large enough to hold the name of the struct
+// returns YES on success, NO on failure
+LUAOBJC_EXTERN BOOL luaobjc_method_sig_struct_name(const char *struct_arg, char *ret);

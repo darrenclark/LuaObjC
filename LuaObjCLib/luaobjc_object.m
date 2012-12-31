@@ -258,6 +258,29 @@ const char *luaobjc_method_sig_arg(const char *sig, int idx) {
 	return sig;
 }
 
+size_t luaobjc_method_sig_arg_len(const char *sig) {
+	int count = 0;
+	while (*sig != '|' && *sig != '\0') {
+		count++;
+		sig++;
+	}
+	return count;
+}
+
+BOOL luaobjc_method_sig_struct_name(const char *struct_arg, char *ret) {
+	if (*struct_arg != '{') return NO;
+	
+	// copy the struct name into struct_name
+	char *ret_ptr = ret;
+	const char *enc_ptr = struct_arg + 1; // skip past the '{'
+	while (*enc_ptr != '=' && *enc_ptr != '}' && *enc_ptr != '\0') {
+		*ret_ptr = *enc_ptr;
+		ret_ptr++;
+		enc_ptr++;
+	}
+	*ret_ptr = '\0';
+	return YES;
+}
 
 static int get_class(lua_State *L) {
 	const char *class_name = luaL_checkstring(L, 1);
@@ -498,6 +521,18 @@ static int generic_call(lua_State *L) {
 			[invocation getReturnValue:&val];
 			luaobjc_selector_push(L, val);
 		} break;
+		case '{': {
+			size_t enc_len = luaobjc_method_sig_arg_len(return_type);
+			char struct_name[enc_len]; // no need to +1 because it already won't count '{'
+			luaobjc_method_sig_struct_name(return_type, struct_name);
+			
+			void *structptr = luaobjc_struct_push(L, struct_name, NULL);
+			if (structptr != NULL) {
+				[invocation getReturnValue:structptr];
+				break;
+			} //  *** else, fallthrough to default ***
+		}
+		// BE CAREFUL! case '{' falls through to here sometimes!!!
 		default: {
 			NSUInteger unknown_size;
 			NSGetSizeAndAlignment(return_type, &unknown_size, NULL);
@@ -723,18 +758,9 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 			[invocation setArgument:&sel atIndex:invocation_idx];
 		} break;
 		case '{': {
-			size_t enc_len = strlen(encoding);
-			char struct_name[enc_len + 1];
-			
-			// copy the struct name into struct_name
-			char *struct_name_ptr = struct_name;
-			const char *enc_ptr = encoding + 1; // skip past the '{'
-			while (*enc_ptr != '=' && *enc_ptr != '}' && *enc_ptr != '\0') {
-				*struct_name_ptr = *enc_ptr;
-				struct_name_ptr++;
-				enc_ptr++;
-			}
-			*struct_name_ptr = '\0';
+			size_t enc_len = luaobjc_method_sig_arg_len(encoding);
+			char struct_name[enc_len]; // no need to +1 because it already won't count '{'
+			luaobjc_method_sig_struct_name(encoding, struct_name);
 			
 			void *val = luaobjc_struct_check(L, lua_idx, struct_name);
 			[invocation setArgument:val atIndex:invocation_idx];

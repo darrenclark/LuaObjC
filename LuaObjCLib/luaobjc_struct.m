@@ -116,6 +116,20 @@ void *luaobjc_struct_check(lua_State *L, int idx, const char *struct_name) {
 	return userdata;
 }
 
+void *luaobjc_struct_push(lua_State *L, const char *struct_name, void *data) {
+	if (push_new_struct(L, struct_name)) {
+		void *structptr = lua_touserdata(L, -1);
+		
+		// copy in data if we have it already
+		if (data != NULL) {
+			struct_def *def = get_struct_def(L, -1);
+			memcpy(structptr, data, def->size);
+		}
+		return structptr;
+	}
+	return NULL;
+}
+
 static int struct_index(lua_State *L) {
 	luaL_checkstring(L, 2);
 	
@@ -481,8 +495,14 @@ static BOOL push_struct_field_value(lua_State *L, int struct_idx, int field) {
 }
 
 static BOOL push_new_struct(lua_State *L, const char *name) {
-	lua_pushstring(L, name);
-	return push_new_struct_idx(L, -1);
+	lua_pushstring(L, name); // ..., name
+	BOOL result = push_new_struct_idx(L, -1); // ..., name, struct?
+	if (result) {
+		lua_replace(L, -2); // ..., struct
+	} else {
+		lua_pop(L, 1); // ...
+	}
+	return result;
 }
 
 static BOOL push_new_struct_idx(lua_State *L, int name_idx) {

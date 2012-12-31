@@ -60,6 +60,7 @@ for i, field in ipairs{"x", "y", "width", "height"} do
 end
 
 testClassInstance:printRect(myRect)
+testClassInstance:printRect(testClassInstance:testStruct())
 
 -- Table access test
 printHeader("Table access tests")
