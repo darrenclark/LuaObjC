@@ -31,6 +31,10 @@
 	return nil;
 }
 
+- (void)printRect:(CGRect)rect {
+	NSLog(@"%@", NSStringFromCGRect(rect));
+}
+
 - (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method { return a; }
 
 - (void)emptyMethod { }

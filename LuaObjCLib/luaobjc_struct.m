@@ -93,6 +93,28 @@ void luaobjc_struct_open(lua_State *L) {
 	lua_settable(L, -3);
 }
 
+void *luaobjc_struct_check(lua_State *L, int idx, const char *struct_name) {
+	void *userdata = luaobjc_checkudata(L, idx, LUAOBJC_REGISTRY_STRUCT_MT, STRUCT_MT);
+	if (userdata != NULL) {
+		// validate structs are both named the same
+		const char *ud_name = get_struct_name(L, idx);
+		if (strcmp(struct_name, ud_name) != 0)
+			userdata = NULL;
+	}
+	
+	if (userdata == NULL) {
+		const char *fmt = "struct of type '%s' expected";
+		
+		size_t final_len = strlen(fmt) + strlen(struct_name) - 1;
+		char err_msg[final_len];
+		
+		sprintf(err_msg, fmt, struct_name);
+		err_msg[final_len-1] = '\0';
+		
+		luaL_argerror(L, idx, err_msg);
+	}
+	return userdata;
+}
 
 static int struct_index(lua_State *L) {
 	luaL_checkstring(L, 2);

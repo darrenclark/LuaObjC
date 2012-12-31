@@ -8,6 +8,7 @@
 #import "luaobjc_fficall.h"
 #import "luaobjc_sel_cache.h"
 #import "luaobjc_selector.h"
+#import "luaobjc_struct.h"
 
 #define OBJECT_MT	"luaobjc_object_mt"
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
@@ -720,6 +721,23 @@ static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation,
 		case ':': {
 			LUAOBJC_ARGS_LUA_SEL(sel, lua_idx)
 			[invocation setArgument:&sel atIndex:invocation_idx];
+		} break;
+		case '{': {
+			size_t enc_len = strlen(encoding);
+			char struct_name[enc_len + 1];
+			
+			// copy the struct name into struct_name
+			char *struct_name_ptr = struct_name;
+			const char *enc_ptr = encoding + 1; // skip past the '{'
+			while (*enc_ptr != '=' && *enc_ptr != '}' && *enc_ptr != '\0') {
+				*struct_name_ptr = *enc_ptr;
+				struct_name_ptr++;
+				enc_ptr++;
+			}
+			*struct_name_ptr = '\0';
+			
+			void *val = luaobjc_struct_check(L, lua_idx, struct_name);
+			[invocation setArgument:val atIndex:invocation_idx];
 		} break;
 		default: {
 			if (encoding[0] == '^' && lua_isnil(L, lua_idx)) {

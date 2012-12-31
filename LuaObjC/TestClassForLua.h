@@ -17,6 +17,8 @@
 - (SEL)testSelector;
 - (id)testSelectorPt2;
 
+- (void)printRect:(CGRect)rect;
+
 - (int)a:(int)a benchmark:(BOOL)benchmark method:(double)method;
 - (void)emptyMethod;
 

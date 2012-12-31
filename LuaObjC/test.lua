@@ -59,6 +59,8 @@ for i, field in ipairs{"x", "y", "width", "height"} do
 	print("CGRect", field, myRect[field])
 end
 
+testClassInstance:printRect(myRect)
+
 -- Table access test
 printHeader("Table access tests")
 testClassInstance.testLuaValue = 5
