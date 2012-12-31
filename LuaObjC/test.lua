@@ -171,5 +171,17 @@ for j = 1, 5 do
 	collectgarbage("collect")
 end
 
+-- Class tests
+printHeader("Classes")
+
+-- Setup our path so we can include LuaClass
+local mainBundle = objc.class("NSBundle"):mainBundle()
+local resourcePath = mainBundle:resourcePath()
+package.path = package.path .. ";" .. resourcePath .. "/?.lua"
+
+
+require("LuaClass")
+print(tostring(objc.class("LuaClass"):alloc():init():autorelease()))
+
 -- End
 printHeader("... Done tests")
