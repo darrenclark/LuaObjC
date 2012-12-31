@@ -1,5 +1,4 @@
 TODO (before I consider it usable):
-- structs
 - objc.call - to call methods w/ selectors that we don't support
 - objc.super - to call super methods
 	- ideally use fast call code and fallback on exchanging self + super
@@ -12,6 +11,7 @@ TODO (before I consider it usable):
 	- make cancellable and have on cancel handler
 
 TODO (for future):
+- support structs in ffi calls
 - support Objective C blocks
 - support fast calls to Lua-created Objective C classes
 - objc.to_ffi
