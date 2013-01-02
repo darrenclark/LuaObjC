@@ -48,6 +48,17 @@ typedef struct luaobjc_method_info {
 	const char *sig;
 } luaobjc_method_info;
 
+
+// Method signatures.
+// For easy use, often times method signature/type encodings will be passed around with
+// a '|' separating each type. This makes it really easy to scan through the
+// list types.  These methods help with that.
+//
+// Converts a method_getTypeEncoding() style string (@4@4:4) to our format (@|@|:)
+// Make sure result is big enough! (strlen(type_encoding) + method_getNumberOfArguments(m) + 1 should be big enough)
+LUAOBJC_EXTERN void luaobjc_method_sig_convert(const char *type_encoding, char *result);
+// Converts our format (@|@|:) back to ObjC format (@@:). Make sure result is big enough! (strlen(type_encoding) should do)
+LUAOBJC_EXTERN void luaobjc_method_sig_revert(const char *type_encoding, char *result);
 // returns a pointer to the beginning of argument at 'idx' in 'sig'
 LUAOBJC_EXTERN const char *luaobjc_method_sig_arg(const char *sig, int idx);
 // returns the length of an arg in sig (when using the v|@|: format)

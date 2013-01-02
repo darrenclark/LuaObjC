@@ -246,6 +246,55 @@ luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size_t len) {
 	return unknown;
 }
 
+void luaobjc_method_sig_convert(const char *enc, char *enc_fixed) {
+	// transform the type encoding into something easily reusable. the goal is
+	// to perform this transformation (using | to split arguments):
+	// v0@4:4  ->  v|@|:  (note, we cannot simply replace numbers w/ |s because
+	// of some certain Objective C type encodings
+	
+	const char *enc_next;
+	char *enc_fixed_ptr = enc_fixed; // for our current index into enc_fixed
+	
+	enc = arg_encoding_skip_type_qualifiers(enc);
+	for (;;) {
+		enc_next = NSGetSizeAndAlignment(enc, NULL, NULL);
+		if (enc_next == NULL) break;
+		
+		// copy argument
+		while (enc != enc_next) {
+			*enc_fixed_ptr = *enc;
+			enc_fixed_ptr++;
+			enc++;
+		}
+		
+		enc = arg_encoding_skip_stack_numbers(enc);
+		enc = arg_encoding_skip_type_qualifiers(enc);
+		
+		if (*enc != '\0') {
+			*enc_fixed_ptr = '|';
+			enc_fixed_ptr++;
+		} else {
+			*enc_fixed_ptr = '\0';
+			enc_fixed_ptr++;
+			break;
+		}
+	}
+}
+
+void luaobjc_method_sig_revert(const char *type_encoding, char *result) {
+	// basically just remove all |
+	while (*type_encoding != '\0') {
+		char ch = *type_encoding;
+		type_encoding++;
+		
+		if (ch != '|') {
+			*result = ch;
+			result++;
+		}
+	}
+	*result = '\0';
+}
+
 const char *luaobjc_method_sig_arg(const char *sig, int idx) {
 	int current_idx = -1;
 	while (*sig != '\0') {
@@ -612,39 +661,13 @@ static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target)
 		// of some certain Objective C type encodings
 		
 		const char *enc = method_getTypeEncoding(m);
-		const char *enc_next;
-		size_t enc_len = strlen(enc);
 		int num_args = method_getNumberOfArguments(m);
+		
+		size_t enc_len = strlen(enc);
 		enc_len += num_args; // extra room for '|'
-		
 		char enc_fixed[enc_len + 1];
-		char *enc_fixed_ptr = enc_fixed; // for our current index into enc_fixed
 		
-		
-		enc = arg_encoding_skip_type_qualifiers(enc);
-		for (;;) {
-			enc_next = NSGetSizeAndAlignment(enc, NULL, NULL);
-			if (enc_next == NULL) break;
-			
-			// copy argument
-			while (enc != enc_next) {
-				*enc_fixed_ptr = *enc;
-				enc_fixed_ptr++;
-				enc++;
-			}
-			
-			enc = arg_encoding_skip_stack_numbers(enc);
-			enc = arg_encoding_skip_type_qualifiers(enc);
-			
-			if (*enc != '\0') {
-				*enc_fixed_ptr = '|';
-				enc_fixed_ptr++;
-			} else {
-				*enc_fixed_ptr = '\0';
-				enc_fixed_ptr++;
-				break;
-			}
-		}
+		luaobjc_method_sig_convert(enc, enc_fixed);
 		
 		return push_method_info(L, target, used_sel, num_args, enc_fixed, strlen(enc_fixed));
 	} else {

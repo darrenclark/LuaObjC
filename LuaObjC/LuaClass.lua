@@ -1,3 +1,7 @@
 local cls = objc.new_class("LuaClass", "NSObject")
--- Add methods/ivars/etc... here once supported
+
+function cls:description()
+	return "Woo-hoo, method overriden!!"
+end
+
 cls:register()

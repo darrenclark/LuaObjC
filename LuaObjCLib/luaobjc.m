@@ -25,7 +25,7 @@ void luaobjc_open(lua_State *L) {
 	luaobjc_sel_cache_open(L); // LUAOBJC_REGISTRY_SEL_CACHE
 	luaobjc_selector_open(L); // LUAOBJC_REGISTRY_SELECTOR_MT
 	luaobjc_struct_open(L); // LUAOBJC_REGISTRY_STRUCT_MT, LUAOBJC_REGISTRY_STRUCT_DEF_MT
-	luaobjc_luaclass_open(L); // LUAOBJC_REGISTRY_LUACLASS_MT
+	luaobjc_luaclass_open(L); // LUAOBJC_REGISTRY_LUACLASS_MT, LUAOBJC_REGISTRY_LUACLASSES
 	
 	lua_pop(L, 1); // pop 'objc' global
 }

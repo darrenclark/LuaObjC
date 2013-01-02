@@ -72,6 +72,7 @@ LUAOBJC_EXTERN_END
 #define LUAOBJC_REGISTRY_STRUCT_MT		6
 #define LUAOBJC_REGISTRY_STRUCT_DEF_MT	7
 #define LUAOBJC_REGISTRY_LUACLASS_MT	8
+#define LUAOBJC_REGISTRY_LUACLASSES		9
 
 
 // Sets t[lua_name] = func_ptr, where t is the table at the top of the stack
