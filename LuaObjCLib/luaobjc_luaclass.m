@@ -10,10 +10,22 @@
 #define LUACLASS_MT "luaclass_mt"
 #define LUACLASSES	"luaclasses"
 
+
+#define METHOD_FUNC_INDEX	1
+#define METHOD_FFI_INDEX	2
+
+
 typedef struct luaclass {
 	Class class;
 	BOOL registered;
 } luaclass;
+
+typedef struct method_ffi_info {
+	ffi_cif cif;
+	ffi_closure *closure;
+	ffi_type *args[0];
+} method_ffi_info;
+
 
 static luaclass *check_luaclass(lua_State *L, int idx);
 
@@ -208,12 +220,15 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	
 	Class cls = [target class];
 	
-	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_LUACLASSES, LUACLASSES);
-	lua_pushlightuserdata(L, (void *)cls);
-	lua_rawget(L, -2);
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_LUACLASSES, LUACLASSES); // luaclasses
+	lua_pushlightuserdata(L, (void *)cls); // luaclasses, cls
+	lua_rawget(L, -2); // luaclasses, fenv
 	
-	lua_pushlightuserdata(L, (void *)sel);
-	lua_rawget(L, -2);
+	lua_pushlightuserdata(L, (void *)sel); // luaclasses, fenv, sel
+	lua_rawget(L, -2); // luaclasses, fenv, tbl
+	
+	lua_pushinteger(L, METHOD_FUNC_INDEX); // luaclasses, fenv, tbl, METHOD_FUNC_INDEX
+	lua_rawget(L, -2); // luaclasses, fenv, tbl, func
 	
 	if (!lua_isfunction(L, -1))
 		[NSException raise:@"LuaClassInvalidMethodCall" format:@"No function found in '%@' for '%s'", cls, (const char *)sel];
@@ -221,39 +236,51 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	if (lua_pcall(L, 0, 1, 0) != 0) {
 		NSLog(@"Error running [%@ %s]: %s", cls, (const char *)sel, lua_tolstring(L, -1, NULL));
 		*(id *)ret = nil;
-		
-		return;
+	} else {
+		// TODO: actually support real args
+		*(id *)ret = [NSString stringWithUTF8String:lua_tolstring(L, -1, NULL)];
 	}
 	
-	// TODO: actually support real args
-	*(id *)ret = [NSString stringWithUTF8String:lua_tolstring(L, -1, NULL)];
+	lua_pop(L, 4);
 }
 
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding) {
-	// map the selector to the function
+	int num_args = 2;
+	
+	// we store a table with details regarding a method in a table
+	//	METHOD_FUNC_INDEX -> the lua function to call
+	//	METHOD_FFI_INDEX -> the method_ffi_info struct
 	lua_getfenv(L, luaclass_idx); // ..., fenv
 	lua_pushlightuserdata(L, (void*)sel); // ..., fenv, sel
-	lua_pushvalue(L, func_idx); // ..., fenv, sel, func
+	
+	lua_newtable(L); // ..., fenv, sel, tbl
+	
+	lua_pushinteger(L, METHOD_FUNC_INDEX); // ..., fenv, sel, tbl, METHOD_FUNC_INDEX
+	lua_pushvalue(L, func_idx); // ..., fenv, sel, tbl, METHOD_FUNC_INDEX, func
+	lua_rawset(L, -3); // ..., fenv, sel, tbl
+	
+	lua_pushinteger(L, METHOD_FFI_INDEX); // ..., fenv, sel, tbl, METHOD_FFI_INDEX
+	method_ffi_info *ffi_info = (method_ffi_info *)lua_newuserdata(L, sizeof(method_ffi_info) + sizeof(ffi_type *) * num_args);
+	// ..., fenv, sel, tbl, METHOD_FFI_INDEX, method_ffi_info
+	lua_rawset(L, -3); // ..., fenv, sel, tbl
+	
 	lua_rawset(L, -3); // ..., fenv
+	lua_pop(L, 1);
 	
 	char objc_encoding[strlen(type_encoding)];
 	luaobjc_method_sig_revert(type_encoding, objc_encoding);
 	
 	luaclass *class = check_luaclass(L, luaclass_idx);
 	
-	static ffi_cif cif;
-	static ffi_type *args[2];
-	static ffi_closure *closure;
-	
 	void(*bound_method)(void);
 	
-	closure = ffi_closure_alloc(sizeof(ffi_closure), (void **)&bound_method);
+	ffi_info->closure = ffi_closure_alloc(sizeof(ffi_closure), (void **)&bound_method);
 	
-	args[0] = &ffi_type_pointer;
-	args[1] = &ffi_type_pointer;
+	ffi_info->args[0] = &ffi_type_pointer;
+	ffi_info->args[1] = &ffi_type_pointer;
 	
-	ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_pointer, args);
-	ffi_prep_closure_loc(closure, &cif, method_binding, (void *)L, bound_method);
+	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args, &ffi_type_pointer, ffi_info->args);
+	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, method_binding, (void *)L, bound_method);
 	
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
 }
