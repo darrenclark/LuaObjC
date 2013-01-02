@@ -5,7 +5,7 @@ function cls:description()
 end
 
 function cls:testMethod()
-	print("[LuaClass testMethod] called!")
+	print("[LuaClass testMethod] called! description is: " .. self:description())
 end
 
 cls:register()

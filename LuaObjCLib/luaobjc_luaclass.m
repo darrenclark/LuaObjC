@@ -244,7 +244,13 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	const char *sig = lua_tostring(L, -1);
 	lua_pop(L, 1); // luaclasses, fenv, tbl, func
 	
-	int res = lua_pcall(L, 0, sig[0] != 'v' ? 1 : 0, 0);
+	
+	int num_args = luaobjc_method_sig_num_types(sig) - 2; // -1 for return type and -1 since we don't pass in the selector
+	luaobjc_object_push_strict(L, target);
+	
+	
+	
+	int res = lua_pcall(L, num_args, sig[0] != 'v' ? 1 : 0, 0);
 	if (res != 0) {
 		NSLog(@"Error running [%@ %s]: %s", cls, (const char *)sel, lua_tolstring(L, -1, NULL));
 	}
