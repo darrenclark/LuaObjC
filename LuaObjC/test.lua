@@ -184,6 +184,7 @@ require("LuaClass")
 local luaObj = objc.class("LuaClass"):alloc():init():autorelease()
 print(tostring(luaObj))
 luaObj:testMethod()
+luaObj:argTest(5)
 
 -- End
 printHeader("... Done tests")

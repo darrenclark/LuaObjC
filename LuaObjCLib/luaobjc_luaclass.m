@@ -213,6 +213,8 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 		} else {
 			*sel = selector;
 		}
+	} else {
+		*sel = selector;
 	}
 }
 
@@ -245,10 +247,45 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	lua_pop(L, 1); // luaclasses, fenv, tbl, func
 	
 	
+	// push args to lua
 	int num_args = luaobjc_method_sig_num_types(sig) - 2; // -1 for return type and -1 since we don't pass in the selector
 	luaobjc_object_push_strict(L, target);
 	
-	
+	for (int i = 1; i < num_args; i++) { // start at 1 because self/target is already pushed
+		int arg_index = i + 1;
+		const char *type = luaobjc_method_sig_arg(sig, arg_index);
+		
+		switch (type[0]) {
+			case 'c': {
+				char val = *(char *)args[arg_index];
+				if (val == 0 || val == 1)
+					lua_pushboolean(L, val);
+				else
+					lua_pushnumber(L, val);
+			} break;
+			case 'i': lua_pushnumber(L, *(int *)args[arg_index]); break;
+			case 's': lua_pushnumber(L, *(short *)args[arg_index]); break;
+			case 'l': lua_pushnumber(L, *(long *)args[arg_index]); break;
+			case 'q': lua_pushnumber(L, *(long long *)args[arg_index]); break;
+			case 'C': lua_pushnumber(L, *(unsigned char *)args[arg_index]); break;
+			case 'I': lua_pushnumber(L, *(unsigned int *)args[arg_index]); break;
+			case 'S': lua_pushnumber(L, *(unsigned short *)args[arg_index]); break;
+			case 'L': lua_pushnumber(L, *(unsigned long *)args[arg_index]); break;
+			case 'Q': lua_pushnumber(L, *(unsigned long long *)args[arg_index]); break;
+			case 'f': lua_pushnumber(L, *(float *)args[arg_index]); break;
+			case 'd': lua_pushnumber(L, *(double *)args[arg_index]); break;
+			case 'B': lua_pushboolean(L, *(_Bool *)args[arg_index]); break;
+			case '*': {
+				const char *str = *(const char **)args[arg_index];
+				if (str == NULL) lua_pushnil(L);
+				else lua_pushstring(L, str);
+			} break;
+			case '@': luaobjc_object_push(L, *(id *)args[arg_index]); break;
+			case '#': luaobjc_object_push(L, *(Class *)args[arg_index]); break;
+			case ':': luaobjc_selector_push(L, *(SEL *)args[arg_index]); break;
+			default: lua_pushnil(L); break;
+		}
+	}
 	
 	int res = lua_pcall(L, num_args, sig[0] != 'v' ? 1 : 0, 0);
 	if (res != 0) {
