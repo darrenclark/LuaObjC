@@ -181,7 +181,9 @@ package.path = package.path .. ";" .. resourcePath .. "/?.lua"
 
 
 require("LuaClass")
-print(tostring(objc.class("LuaClass"):alloc():init():autorelease()))
+local luaObj = objc.class("LuaClass"):alloc():init():autorelease()
+print(tostring(luaObj))
+luaObj:testMethod()
 
 -- End
 printHeader("... Done tests")

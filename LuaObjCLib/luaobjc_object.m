@@ -295,6 +295,16 @@ void luaobjc_method_sig_revert(const char *type_encoding, char *result) {
 	*result = '\0';
 }
 
+int luaobjc_method_sig_num_types(const char *sig) {
+	int count = 0;
+	while (*sig != '\0') {
+		if (*sig == '|') count++;
+		sig++;
+	}
+	count++; // because of NUL byte
+	return count;
+}
+
 const char *luaobjc_method_sig_arg(const char *sig, int idx) {
 	int current_idx = -1;
 	while (*sig != '\0') {

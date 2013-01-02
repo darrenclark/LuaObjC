@@ -3,6 +3,7 @@
 #import "luaobjc_luaclass.h"
 #import "luaobjc_object.h"
 #import "luaobjc_sel_cache.h"
+#import "luaobjc_selector.h"
 
 #import "ffi.h"
 #import <objc/runtime.h>
@@ -13,6 +14,7 @@
 
 #define METHOD_FUNC_INDEX	1
 #define METHOD_FFI_INDEX	2
+#define METHOD_SIG_INDEX	3
 
 
 typedef struct luaclass {
@@ -37,7 +39,8 @@ static int luaclass_register(lua_State *L);
 static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method);
 // Binds a ObjC function to a Lua function
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding);
-
+// Returns the ffi_type for a objc type
+static ffi_type *type_for_objc_type(const char *type_encoding);
 
 void luaobjc_luaclass_open(lua_State *L) {
 	// 'objc' global is at the top of the stack. make sure it is still there
@@ -204,9 +207,11 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 		m = class_getInstanceMethod(cls, fallback);
 		
 		if (m) {
-			*sel = selector;
+			*sel = fallback;
 			*method = m;
 			return;
+		} else {
+			*sel = selector;
 		}
 	}
 }
@@ -233,19 +238,72 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	if (!lua_isfunction(L, -1))
 		[NSException raise:@"LuaClassInvalidMethodCall" format:@"No function found in '%@' for '%s'", cls, (const char *)sel];
 	
-	if (lua_pcall(L, 0, 1, 0) != 0) {
+	lua_pushinteger(L, METHOD_SIG_INDEX); // luaclasses, fenv, tbl, func, METHOD_SIG_INDEX
+	lua_rawget(L, -3); // luaclasses, fenv, tbl, func, sig
+	
+	const char *sig = lua_tostring(L, -1);
+	lua_pop(L, 1); // luaclasses, fenv, tbl, func
+	
+	int res = lua_pcall(L, 0, sig[0] != 'v' ? 1 : 0, 0);
+	if (res != 0) {
 		NSLog(@"Error running [%@ %s]: %s", cls, (const char *)sel, lua_tolstring(L, -1, NULL));
-		*(id *)ret = nil;
-	} else {
-		// TODO: actually support real args
-		*(id *)ret = [NSString stringWithUTF8String:lua_tolstring(L, -1, NULL)];
 	}
 	
-	lua_pop(L, 4);
+	if (lua_isnoneornil(L, -1) || res != 0) {
+		// return a default value
+		switch (sig[0]) {
+			case 'c': *(char *)ret = 0; break;
+			case 'i': *(int *)ret = 0; break;
+			case 's': *(short *)ret = 0; break;
+			case 'l': *(long *)ret = 0; break;
+			case 'q': *(long long *)ret = 0; break;
+			case 'C': *(unsigned char *)ret = 0; break;
+			case 'I': *(unsigned int *)ret = 0; break;
+			case 'S': *(unsigned short *)ret = 0; break;
+			case 'L': *(unsigned long *)ret = 0; break;
+			case 'Q': *(unsigned long long *)ret = 0; break;
+			case 'f': *(float *)ret = 0.0f; break;
+			case 'd': *(double *)ret = 0.0; break;
+			case 'B': *(_Bool *)ret = false; break;
+			case 'v': break; // void, do nothing
+			case '*': *(void **)ret = NULL; break;
+			case '@': *(id *)ret = NULL; break;
+			case '#': *(Class *)ret = NULL; break;
+			case ':': *(SEL *)ret = NULL; break;
+		}
+	} else {
+		switch (sig[0]) {
+			case 'c': {
+				if (lua_isboolean(L, -1))
+					*(BOOL *)ret = (BOOL)lua_toboolean(L, -1);
+				else
+					*(char *)ret = (char)lua_tonumber(L, -1);
+			} break;
+			case 'i': *(int *)ret = (int)lua_tonumber(L, -1); break;
+			case 's': *(short *)ret = (short)lua_tonumber(L, -1); break;
+			case 'l': *(long *)ret = (long)lua_tonumber(L, -1); break;
+			case 'q': *(long long *)ret = (long long)lua_tonumber(L, -1); break;
+			case 'C': *(unsigned char *)ret = (unsigned char)lua_tonumber(L, -1); break;
+			case 'I': *(unsigned int *)ret = (unsigned int)lua_tonumber(L, -1); break;
+			case 'S': *(unsigned short *)ret = (unsigned short)lua_tonumber(L, -1); break;
+			case 'L': *(unsigned long *)ret = (unsigned long)lua_tonumber(L, -1); break;
+			case 'Q': *(unsigned long long *)ret = (unsigned long long)lua_tonumber(L, -1); break;
+			case 'f': *(float *)ret = (float)lua_tonumber(L, -1); break;
+			case 'd': *(double *)ret = (double)lua_tonumber(L, -1); break;
+			case 'B': *(_Bool *)ret = (_Bool)lua_toboolean(L, -1); break;
+			case 'v': break; // void, do nothing
+			case '*': *(const char **)ret = lua_tostring(L, -1); break;
+			case '@': *(id *)ret = luaobjc_to_objc(L, -1); break;
+			case '#': *(Class *)ret = (Class)luaobjc_to_objc(L, -1); break;
+			case ':': *(SEL *)ret = (SEL)luaobjc_selector_check_s(L, -1); break;
+		}
+	}
+	
+	lua_pop(L, 4); // (empty stack)
 }
 
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding) {
-	int num_args = 2;
+	int num_args = luaobjc_method_sig_num_types(type_encoding) - 1;
 	
 	// we store a table with details regarding a method in a table
 	//	METHOD_FUNC_INDEX -> the lua function to call
@@ -264,8 +322,12 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	// ..., fenv, sel, tbl, METHOD_FFI_INDEX, method_ffi_info
 	lua_rawset(L, -3); // ..., fenv, sel, tbl
 	
+	lua_pushinteger(L, METHOD_SIG_INDEX); // .., fenv, sel, tbl, METHOD_SIG_INDEX
+	lua_pushstring(L, type_encoding); // ..., fenv, sel, tbl, METHOD_SIG_INDEX, type_encoding
+	lua_rawset(L, -3); // ..., fenv, sel, tbl
+	
 	lua_rawset(L, -3); // ..., fenv
-	lua_pop(L, 1);
+	lua_pop(L, 1); // ...
 	
 	char objc_encoding[strlen(type_encoding)];
 	luaobjc_method_sig_revert(type_encoding, objc_encoding);
@@ -276,11 +338,43 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	
 	ffi_info->closure = ffi_closure_alloc(sizeof(ffi_closure), (void **)&bound_method);
 	
-	ffi_info->args[0] = &ffi_type_pointer;
-	ffi_info->args[1] = &ffi_type_pointer;
+	for (int i = 0; i < num_args; i++) {
+		const char *method_sig_arg = luaobjc_method_sig_arg(type_encoding, i);
+		ffi_type *type = type_for_objc_type(method_sig_arg);
+		if (type == NULL) {
+			lua_pushfstring(L, "invalid type for [%@ %s]: %c", class->class, (const char *)sel, *method_sig_arg);
+			lua_error(L);
+		}
+		ffi_info->args[i] = type;
+	}
 	
-	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args, &ffi_type_pointer, ffi_info->args);
+	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args, type_for_objc_type(type_encoding), ffi_info->args);
 	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, method_binding, (void *)L, bound_method);
 	
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
+}
+
+static ffi_type *type_for_objc_type(const char *type_encoding) {
+	// Set ret_type
+	switch (type_encoding[0]) {
+		case 'c': return &ffi_type_sint8;
+		case 'i': return &ffi_type_sint32;
+		case 's': return &ffi_type_sint16;
+		case 'l': return &ffi_type_sint32;
+		case 'q': return &ffi_type_sint64;
+		case 'C': return &ffi_type_uint8;
+		case 'I': return &ffi_type_uint32;
+		case 'S': return &ffi_type_uint16;
+		case 'L': return &ffi_type_uint32;
+		case 'Q': return &ffi_type_uint64;
+		case 'f': return &ffi_type_float;
+		case 'd': return &ffi_type_double;
+		case 'B': return &ffi_type_uint8;
+		case 'v': return &ffi_type_void;
+		case '*': return &ffi_type_pointer;
+		case '@': return &ffi_type_pointer;
+		case '#': return &ffi_type_pointer;
+		case ':': return &ffi_type_pointer;
+		default: return NULL;
+	}
 }

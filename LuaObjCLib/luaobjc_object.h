@@ -59,6 +59,8 @@ typedef struct luaobjc_method_info {
 LUAOBJC_EXTERN void luaobjc_method_sig_convert(const char *type_encoding, char *result);
 // Converts our format (@|@|:) back to ObjC format (@@:). Make sure result is big enough! (strlen(type_encoding) should do)
 LUAOBJC_EXTERN void luaobjc_method_sig_revert(const char *type_encoding, char *result);
+// returns number of types in a method signature (note, number of args is one less than this, since this counts the return type)
+LUAOBJC_EXTERN int luaobjc_method_sig_num_types(const char *sig);
 // returns a pointer to the beginning of argument at 'idx' in 'sig'
 LUAOBJC_EXTERN const char *luaobjc_method_sig_arg(const char *sig, int idx);
 // returns the length of an arg in sig (when using the v|@|: format)
