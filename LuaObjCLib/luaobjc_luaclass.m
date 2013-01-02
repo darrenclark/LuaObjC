@@ -255,5 +255,5 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_pointer, args);
 	ffi_prep_closure_loc(closure, &cif, method_binding, (void *)L, bound_method);
 	
-	class_replaceMethod(class->class, sel, bound_method, objc_encoding);
+	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
 }
