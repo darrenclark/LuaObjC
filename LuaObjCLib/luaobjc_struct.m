@@ -3,11 +3,12 @@
 
 #import "luaobjc_struct.h"
 
-// A struct definition is a table with 4 key/value pairs:
+// A struct definition is a table with 5 key/value pairs:
 //	STRUCT_NAME_INDEX -> name of struct
 //	STRUCT_DEF_INDEX -> struct_def userdata
 //	FIELD_NAMES_INDEX -> table mapping field names to indices in struct_def->fields (0 based)
 //	FIELD_ORDER_INDEX -> table mapping order of fields to names (1 based, reference to list of field names passed in)
+//	STRUCT_FFI -> struct_ffi struct with info for FFI calls
 // and various metamethods to allow creating structs
 
 
@@ -20,6 +21,7 @@
 #define STRUCT_DEF_INDEX	2
 #define FIELD_NAMES_INDEX	3
 #define FIELD_ORDER_INDEX	4
+#define STRUCT_FFI_INDEX	5
 
 
 typedef struct field_info {
@@ -33,6 +35,10 @@ typedef struct struct_def {
 	field_info fields[0];
 } struct_def;
 
+typedef struct struct_ffi {
+	ffi_type struct_type;
+	ffi_type *struct_elements[0];
+} struct_ffi;
 
 static int struct_index(lua_State *L);
 static int struct_newindex(lua_State *L);
@@ -70,6 +76,9 @@ static BOOL push_struct_field_value(lua_State *L, int struct_idx, int field);
 // on failure, doesn't push anything and returns NO
 static BOOL push_new_struct(lua_State *L, const char *name);
 static BOOL push_new_struct_idx(lua_State *L, int name_idx);
+
+// gets the ffi type for type_encoding
+static ffi_type *type_for_objc_type(char type);
 
 
 void luaobjc_struct_open(lua_State *L) {
@@ -141,6 +150,39 @@ void *luaobjc_struct_push(lua_State *L, const char *struct_name, void *data) {
 		return structptr;
 	}
 	return NULL;
+}
+
+size_t luaobjc_struct_size(lua_State *L, const char *struct_name) {
+	push_global_struct(L); // objc.struct
+	lua_pushstring(L, struct_name); // objc.struct, struct_name
+	lua_rawget(L, -2); // objc.struct, tbl
+	if (lua_isnoneornil(L, -1)) {
+		lua_pop(L, 2); // <empty>
+		return 0;
+	}
+	
+	lua_rawgeti(L, -1, STRUCT_DEF_INDEX); // objc.struct, tbl, struct_def
+	struct_def *def = (struct_def *)lua_touserdata(L, -1);
+	
+	lua_pop(L, 3); // <empty>
+	return def->size;
+}
+
+ffi_type *luaobjc_struct_get_ffi(lua_State *L, const char *struct_name) {
+	push_global_struct(L); // objc.struct
+	lua_pushstring(L, struct_name); // objc.struct, struct_name
+	lua_rawget(L, -2); // objc.struct, tbl
+	
+	if (lua_isnoneornil(L, -1)) {
+		lua_pop(L, 2); // <empty>
+		return NULL;
+	} else {
+		lua_rawgeti(L, -1, STRUCT_FFI_INDEX); // objc.struct, tbl, struct_ffi
+		struct_ffi *ffi = (struct_ffi*)lua_touserdata(L, -1);
+		
+		lua_pop(L, 3);
+		return &(ffi->struct_type);
+	}
 }
 
 static int struct_index(lua_State *L) {
@@ -367,6 +409,17 @@ static struct_def *parse_struct(lua_State *L, int struct_name_index, int layout_
 	lua_rawseti(L, -2, FIELD_ORDER_INDEX);
 	// ..., table
 	
+	struct_ffi *ffi = (struct_ffi *)lua_newuserdata(L, sizeof(struct_ffi) + sizeof(ffi_type *) * (layout_len + 1)); // ..., table, ffi
+	ffi->struct_type.size = ffi->struct_type.alignment = 0;
+	ffi->struct_type.elements = ffi->struct_elements;
+	
+	for (int i = 0; i < layout_len; i++) {
+		ffi->struct_elements[i] = type_for_objc_type(layout[i]);
+	}
+	ffi->struct_elements[layout_len] = NULL;
+	
+	lua_rawseti(L, -2, STRUCT_FFI_INDEX); // ..., table
+	
 	return def;
 }
 
@@ -547,4 +600,29 @@ static BOOL push_new_struct_idx(lua_State *L, int name_idx) {
 	lua_replace(L, -2); // ..., struct
 	
 	return YES;
+}
+
+static ffi_type *type_for_objc_type(char type) {
+	// Set ret_type
+	switch (type) {
+		case 'c': return &ffi_type_sint8;
+		case 'i': return &ffi_type_sint32;
+		case 's': return &ffi_type_sint16;
+		case 'l': return &ffi_type_sint32;
+		case 'q': return &ffi_type_sint64;
+		case 'C': return &ffi_type_uint8;
+		case 'I': return &ffi_type_uint32;
+		case 'S': return &ffi_type_uint16;
+		case 'L': return &ffi_type_uint32;
+		case 'Q': return &ffi_type_uint64;
+		case 'f': return &ffi_type_float;
+		case 'd': return &ffi_type_double;
+		case 'B': return &ffi_type_uint8;
+		case 'v': return &ffi_type_void;
+		case '*': return &ffi_type_pointer;
+		case '@': return &ffi_type_pointer;
+		case '#': return &ffi_type_pointer;
+		case ':': return &ffi_type_pointer;
+		default: return NULL;
+	}
 }
