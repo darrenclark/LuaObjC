@@ -36,7 +36,10 @@ static int luaclass_newindex(lua_State *L);
 static int luaclass_register(lua_State *L);
 
 // Determines the selector and method for a given string at 'str_idx'
-static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method);
+static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method, const char **types);
+// Checks through this class + superclass(es) protocols to find a method
+// returns YES and puts the method in out_description on success. otherwise returns NO
+static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_description *out_description);
 // Binds a ObjC function to a Lua function
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding);
 // Returns the ffi_type for a objc type
@@ -94,6 +97,28 @@ static int new_luaclass(lua_State *L) {
 	luaclass->class = objc_allocateClassPair(super_class, class_name, 0);
 	luaclass->registered = NO;
 	
+	// add any protocols?
+	if (lua_type(L, 3) == LUA_TTABLE) {
+		int i = 1;
+		for (;; i++) {
+			lua_rawgeti(L, 3, i); // ..., luaclass, protocol
+			if (lua_isstring(L, -1)) {
+				const char *protocol_name = lua_tostring(L, -1);
+				Protocol *protocol = objc_getProtocol(protocol_name);
+				lua_pop(L, 1); // ..., luaclass
+				
+				if (protocol != NULL) {
+					class_addProtocol(luaclass->class, protocol);
+				} else {
+					NSLog(@"Protocol '%s' not found", protocol_name);
+				}
+			} else if (lua_isnoneornil(L, -1)) {
+				lua_pop(L, 1); // ..., luaclass
+				break;
+			}
+		}
+	}
+	
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_LUACLASSES, LUACLASSES); // luaclass, luaclasses
 	lua_pushlightuserdata(L, (void *)luaclass->class); // luaclass, luaclasses, class
 	lua_getfenv(L, -3); // luaclass, luaclasses, class, luaclass
@@ -124,9 +149,28 @@ static int luaclass_newindex(lua_State *L) {
 	
 	SEL selector = NULL;
 	Method method = NULL;
-	determine_selector_method(L, 2, cls->class, &selector, &method);
+	const char *types = NULL;
+	determine_selector_method(L, 2, cls->class, &selector, &method, &types);
 	
-	if (method == NULL) {
+	if (method != NULL) {
+		const char *enc = method_getTypeEncoding(method);
+		int num_args = method_getNumberOfArguments(method);
+		
+		size_t enc_len = strlen(enc);
+		enc_len += num_args; // extra room for '|'
+		char enc_fixed[enc_len + 1];
+		
+		luaobjc_method_sig_convert(enc, enc_fixed);
+		
+		bind_method(L, 1, 3, selector, enc_fixed);
+	} else if (types != NULL) {
+		size_t enc_len = strlen(types) * 2; // we want to make sure we have enough room for '|'
+		char enc_fixed[enc_len + 1];
+		
+		luaobjc_method_sig_convert(types, enc_fixed);
+		
+		bind_method(L, 1, 3, selector, enc_fixed);
+	} else {
 		// no info to go by, so just assume that they want a method something like: @@:
 		// we also want to create it in our own internal usable format that includes
 		// | between each type
@@ -150,26 +194,16 @@ static int luaclass_newindex(lua_State *L) {
 		}
 		
 		bind_method(L, 1, 3, selector, sig);
-	} else {
-		const char *enc = method_getTypeEncoding(method);
-		int num_args = method_getNumberOfArguments(method);
-		
-		size_t enc_len = strlen(enc);
-		enc_len += num_args; // extra room for '|'
-		char enc_fixed[enc_len + 1];
-		
-		luaobjc_method_sig_convert(enc, enc_fixed);
-		
-		bind_method(L, 1, 3, selector, enc_fixed);
 	}
 	
 	return 0;
 }
 
 
-static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method) {
+static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method, const char **types) {
 	*sel = NULL;
 	*method = NULL;
+	*types = NULL;
 	
 	size_t len;
 	const char *str = lua_tolstring(L, str_idx, &len);
@@ -200,7 +234,16 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 		*sel = selector;
 		*method = m;
 		return;
-	} else if (m == NULL && !has_args) {
+	} else {
+		struct objc_method_description method_description;
+		if (check_protocols_for_selector(cls, selector, &method_description)) {
+			*sel = selector;
+			*types = method_description.types;
+			return;
+		}
+	}
+	
+	if (m == NULL && !has_args) {
 		// Try again by adding one arg to the end
 		transformed[len] = ':';
 		SEL fallback = luaobjc_get_sel(L, transformed);
@@ -211,13 +254,67 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 			*method = m;
 			return;
 		} else {
-			*sel = selector;
+			struct objc_method_description method_description;
+			if (check_protocols_for_selector(cls, selector, &method_description)) {
+				*sel = fallback;
+				*types = method_description.types;
+				return;
+			} else {
+				// otherwise, just use default selector
+				*sel = selector;
+				return;
+			}
 		}
 	} else {
 		*sel = selector;
 	}
 }
 
+static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_description *out_description) {
+	BOOL found_method = NO;
+	
+	while (!found_method && [(id)cls superclass] != cls) {
+		unsigned int count;
+		Protocol **protocols = class_copyProtocolList(cls, &count);
+		
+		for (unsigned int i = 0; i < count; i++) {
+			Protocol *p = protocols[i];
+			
+			unsigned int methods_count;
+			struct objc_method_description *methods;
+			
+			// try required methods
+			methods = protocol_copyMethodDescriptionList(p, YES, YES, &methods_count);
+			for (unsigned int j = 0; j < methods_count; j++) {
+				if (methods[j].name == sel) {
+					found_method = YES;
+					*out_description = methods[j];
+					break;
+				}
+			}
+			free(methods);
+			
+			if (found_method)
+				break;
+			
+			// try non-required methods
+			methods = protocol_copyMethodDescriptionList(p, NO, YES, &methods_count);
+			for (unsigned int j = 0; j < methods_count; j++) {
+				if (methods[j].name == sel) {
+					found_method = YES;
+					*out_description = methods[j];
+					break;
+				}
+			}
+			free(methods);
+		}
+		
+		free(protocols);
+		cls = [cls superclass];
+	}
+	
+	return found_method;
+}
 
 static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata) {
 	lua_State *L = (lua_State *)userdata;

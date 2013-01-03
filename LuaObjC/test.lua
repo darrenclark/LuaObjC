@@ -181,10 +181,12 @@ package.path = package.path .. ";" .. resourcePath .. "/?.lua"
 
 
 require("LuaClass")
-local luaObj = objc.class("LuaClass"):alloc():init():autorelease()
+local luaObj = objc.class("LuaClass"):alloc():init()
 print(tostring(luaObj))
 luaObj:testMethod()
 luaObj:argTest(5)
+testClassInstance:breakpoint()
+luaObj:showAlert()
 
 -- End
 printHeader("... Done tests")

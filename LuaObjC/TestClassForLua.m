@@ -144,6 +144,10 @@
 	return [NSArray class];
 }
 
+- (void)breakpoint {
+	NSLog(@"Breakpoint");
+}
+
 - (void)dealloc {
 	NSLog(@"TestClassForLua dealloc!");
 	[super dealloc];

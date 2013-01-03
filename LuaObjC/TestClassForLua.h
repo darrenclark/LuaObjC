@@ -44,4 +44,6 @@
 - (id)objectTest;
 - (Class)classTest;
 
+- (void)breakpoint;
+
 @end
