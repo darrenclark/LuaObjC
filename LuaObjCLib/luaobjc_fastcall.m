@@ -39261,6 +39261,7 @@ static int fc_H_HH(lua_State *L) {
 int luaobjc_fastcall_max_args = 2;
 
 lua_CFunction luaobjc_fastcall_get(luaobjc_method_info *info) {
+	if (info->num_args > luaobjc_fastcall_max_args + 2) return NULL;
 	const char *ret = info->sig;
 	const char *arg0 = luaobjc_method_sig_arg(info->sig, 2);
 	const char *arg1 = luaobjc_method_sig_arg(info->sig, 3);

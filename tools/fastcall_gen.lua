@@ -219,6 +219,7 @@ end
 print("int luaobjc_fastcall_max_args = " .. tostring(MAX_ARGS) .. ";")
 print("")
 print("lua_CFunction luaobjc_fastcall_get(luaobjc_method_info *info) {")
+print("\tif (info->num_args > luaobjc_fastcall_max_args + 2) return NULL;")
 print("\tconst char *ret = info->sig;")
 for i = 0, MAX_ARGS - 1 do
 	print("\tconst char *arg" .. i .. " = luaobjc_method_sig_arg(info->sig, " .. (i+2) .. ");")
