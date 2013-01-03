@@ -81,6 +81,13 @@ LUAOBJC_EXTERN_END
 	lua_pushcfunction(L, func_ptr);											\
 	lua_settable(L, -3);													\
 
+// Sets t[constant_name] = constant_value, where t is the table at the top of the stack
+// and constant_value is an integer
+#define LUAOBJC_CONSTANT(constant_name, constant_value)	\
+	lua_pushstring(L, constant_name);										\
+	lua_pushinteger(L, constant_value);										\
+	lua_settable(L, -3);													\
+
 LUAOBJC_EXTERN_BEGIN
 extern const char *luaobjc_namespace;
 LUAOBJC_EXTERN_END

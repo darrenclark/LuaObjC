@@ -14,6 +14,8 @@ extern NSString *LuaContextErrorDomain;
 
 @property (nonatomic, readonly) lua_State *lua;
 
-- (BOOL)doFile:(NSString *)fullPath error:(NSError **)error;
+// On Success: Returns result of running file 'fullPath' and sets error to nil
+// On Failure: Returns nil and returns an NSError through 'error'
+- (id)doFile:(NSString *)fullPath error:(NSError **)error;
 
 @end

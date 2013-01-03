@@ -16,11 +16,18 @@
 #define METHOD_FFI_INDEX	2
 #define METHOD_SIG_INDEX	3
 
+typedef enum property_memory_policy {
+	property_memory_policy_assign = 0,
+	property_memory_policy_retain = 1,
+	property_memory_policy_copy = 2,
+} property_memory_policy;
+
 
 typedef struct luaclass {
 	Class class;
 	BOOL registered;
 } luaclass;
+
 
 typedef struct method_ffi_info {
 	ffi_cif cif;
@@ -29,11 +36,18 @@ typedef struct method_ffi_info {
 } method_ffi_info;
 
 
+typedef struct ivar_info {
+	Ivar ivar;
+	property_memory_policy memory_policy;
+} ivar_info;
+
+
 static luaclass *check_luaclass(lua_State *L, int idx);
 
 static int new_luaclass(lua_State *L);
 static int luaclass_newindex(lua_State *L);
 static int luaclass_register(lua_State *L);
+static int luaclass_property(lua_State *L);
 
 // Determines the selector and method for a given string at 'str_idx'
 static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method, const char **types);
@@ -42,6 +56,8 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_description *out_description);
 // Binds a ObjC function to a Lua function
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding);
+// Binds property setter/getters
+static void bind_property(Class cls, ivar_info ivar_info, const char *setter, const char *getter);
 // Returns the ffi_type for a objc type
 static ffi_type *type_for_objc_type(const char *type_encoding);
 
@@ -54,6 +70,7 @@ void luaobjc_luaclass_open(lua_State *L) {
 	lua_setfield(L, -2, "__index");
 	
 	LUAOBJC_ADD_METHOD("register", luaclass_register);
+	LUAOBJC_ADD_METHOD("property", luaclass_property);
 	LUAOBJC_ADD_METHOD("__newindex", luaclass_newindex);
 	lua_pop(L, 1); // pop metatable
 	
@@ -62,6 +79,10 @@ void luaobjc_luaclass_open(lua_State *L) {
 	lua_pop(L, 1);
 	
 	LUAOBJC_ADD_METHOD("new_class", new_luaclass);
+	
+	LUAOBJC_CONSTANT("ASSIGN", property_memory_policy_assign);
+	LUAOBJC_CONSTANT("RETAIN", property_memory_policy_retain);
+	LUAOBJC_CONSTANT("COPY", property_memory_policy_copy);
 }
 
 static luaclass *check_luaclass(lua_State *L, int idx) {
@@ -121,7 +142,7 @@ static int new_luaclass(lua_State *L) {
 	
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_LUACLASSES, LUACLASSES); // luaclass, luaclasses
 	lua_pushlightuserdata(L, (void *)luaclass->class); // luaclass, luaclasses, class
-	lua_getfenv(L, -3); // luaclass, luaclasses, class, luaclass
+	lua_pushvalue(L, -3); // luaclass, luaclasses, class, luaclass
 	lua_rawset(L, -3); // luaclass, luaclasses
 	lua_pop(L, 1); // luaclass
 	
@@ -138,6 +159,45 @@ static int luaclass_register(lua_State *L) {
 	objc_registerClassPair(class->class);
 	class->registered = YES;
 	return 1;
+}
+
+static int luaclass_property(lua_State *L) {
+	luaclass *class = check_luaclass(L, 1);
+	if (class->registered) {
+		lua_pushfstring(L, "can't add property, class '%s' has already been registered", class_getName(class->class));
+		lua_error(L);
+	}
+	
+	const char *name = luaL_checkstring(L, 2);
+	
+	static const char *memory_policy_error = "expected objc.ASSIGN, objc.RETAIN, or objc.COPY";
+	luaL_argcheck(L, lua_isnumber(L, 3), 3, memory_policy_error);
+	int memory_policy = lua_tonumber(L, 3);
+	luaL_argcheck(L, memory_policy >= property_memory_policy_assign && memory_policy <= property_memory_policy_copy, 3, memory_policy_error);
+	
+	unsigned int size, alignment;
+	NSGetSizeAndAlignment("@", &size, &alignment);
+	class_addIvar(class->class, name, size, (uint8_t)alignment, "@");
+	
+	Ivar ivar = class_getInstanceVariable(class->class, name);
+	ivar_info ivar_info;
+	
+	ivar_info.ivar = ivar;
+	ivar_info.memory_policy = (property_memory_policy)memory_policy;
+	
+	int setter_len = strlen(name) + 4;
+	char setter[setter_len]; // 3 for set, one for \0
+	
+	strcpy(setter, "set");
+	strcpy((char *)setter + 3, name);
+	
+	if (setter[3] >= 'a' && setter[3] <= 'z')
+		setter[3] = setter[3] += ('A' - 'a'); // convert to uppercase
+	setter[setter_len - 1] = '\0';
+	
+	bind_property(class->class, ivar_info, setter, name);
+	
+	return 0;
 }
 
 static int luaclass_newindex(lua_State *L) {
@@ -326,7 +386,9 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_LUACLASSES, LUACLASSES); // luaclasses
 	lua_pushlightuserdata(L, (void *)cls); // luaclasses, cls
-	lua_rawget(L, -2); // luaclasses, fenv
+	lua_rawget(L, -2); // luaclasses, luaclass
+	lua_getfenv(L, -1); // luaclasses, luaclass, fenv
+	lua_replace(L, -2); // luaclasses, fenv
 	
 	lua_pushlightuserdata(L, (void *)sel); // luaclasses, fenv, sel
 	lua_rawget(L, -2); // luaclasses, fenv, tbl
@@ -448,6 +510,7 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	// we store a table with details regarding a method in a table
 	//	METHOD_FUNC_INDEX -> the lua function to call
 	//	METHOD_FFI_INDEX -> the method_ffi_info struct
+	//	METHOD_SIG_INDEX -> the signature of the method
 	lua_getfenv(L, luaclass_idx); // ..., fenv
 	lua_pushlightuserdata(L, (void*)sel); // ..., fenv, sel
 	
@@ -492,6 +555,55 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, method_binding, (void *)L, bound_method);
 	
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
+}
+
+static ivar_info get_prop_ivar_info(id obj, SEL selector) {
+	Class cls = [obj class];
+	while (cls != [cls superclass]) {
+		NSValue *val = objc_getAssociatedObject(cls, selector);
+		if (val != NULL) {
+			ivar_info ivar;
+			[val getValue:&ivar];
+			return ivar;
+		}
+		cls = [cls superclass];
+	}
+	ivar_info ret;
+	ret.ivar = NULL;
+	return ret;
+}
+
+static void prop_set_binding(id self, SEL _cmd, id value) {
+	ivar_info ivar = get_prop_ivar_info(self, _cmd);
+	if (ivar.memory_policy == property_memory_policy_retain
+		|| ivar.memory_policy == property_memory_policy_copy) {
+		id prev = object_getIvar(self, ivar.ivar);
+		[prev release];
+	}
+	
+	if (ivar.memory_policy == property_memory_policy_retain)
+		[value retain];
+	else if (ivar.memory_policy == property_memory_policy_copy)
+		value = [value copy];
+	
+	object_setIvar(self, ivar.ivar, value);
+}
+
+static id prop_get_binding(id self, SEL _cmd) {
+	ivar_info ivar = get_prop_ivar_info(self, _cmd);
+	return object_getIvar(self, ivar.ivar);
+}
+
+static void bind_property(Class cls, ivar_info ivar_info, const char *setter, const char *getter) {
+	NSValue *boxedIvar = [NSValue value:(void *)&ivar_info withObjCType:@encode(typeof(ivar_info))];
+	
+	SEL setterSel = sel_getUid(setter);
+	objc_setAssociatedObject(cls, setterSel, boxedIvar, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	class_addMethod(cls, setterSel, (IMP)prop_set_binding, "v@:@");
+	
+	SEL getterSel = sel_getUid(getter);
+	objc_setAssociatedObject(cls, getterSel, boxedIvar, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	class_addMethod(cls, getterSel, (IMP)prop_get_binding, "@@:");
 }
 
 static ffi_type *type_for_objc_type(const char *type_encoding) {

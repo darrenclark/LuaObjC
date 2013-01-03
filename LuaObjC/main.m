@@ -8,11 +8,20 @@
 
 #import <UIKit/UIKit.h>
 
-#import "AppDelegate.h"
+#import "LuaContext.h"
 
 int main(int argc, char *argv[])
 {
 	@autoreleasepool {
-	    return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+		LuaContext *context = [[LuaContext alloc] init];
+		
+		NSString *luaFilePath = [[NSBundle mainBundle] pathForResource:@"main" ofType:@"lua"];
+		
+		NSError *error;
+		id result = [context doFile:luaFilePath error:&error];
+		if (error != nil)
+			NSLog(@"Error running '%@': %@", luaFilePath, error.localizedDescription);
+		
+	    return UIApplicationMain(argc, argv, nil, result);
 	}
 }

@@ -3,6 +3,7 @@
 
 
 #import "LuaContext.h"
+#import "luaobjc_object.h"
 
 NSString *LuaContextErrorDomain = @"LuaContextError";
 
@@ -34,24 +35,28 @@ NSString *LuaContextErrorDomain = @"LuaContextError";
 	[super dealloc];
 }
 
-- (BOOL)doFile:(NSString *)fullPath error:(NSError **)error {
+- (id)doFile:(NSString *)fullPath error:(NSError **)error {
 	int ret = luaL_loadfile(lua_, [fullPath UTF8String]);
 	if (ret != 0) {
 		if (error != NULL)
 			*error = [self readLuaError:ret];
 		lua_pop(lua_, 1);
-		return NO;
+		return nil;
 	}
 	
-	ret = lua_pcall(lua_, 0, 0, 0);
+	ret = lua_pcall(lua_, 0, 1, 0);
 	if (ret != 0) {
 		if (error != NULL)
 			*error = [self readLuaError:ret];
 		lua_pop(lua_, 1);
-		return NO;
+		return nil;
+	} else {
+		id ret = luaobjc_to_objc(lua_, -1);
+		if (error != NULL)
+			*error = nil;
+		lua_pop(lua_, 1);
+		return ret;
 	}
-	
-	return YES;
 }
 
 - (NSError *)readLuaError:(int)errorCode {

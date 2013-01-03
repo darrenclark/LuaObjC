@@ -174,12 +174,6 @@ end
 -- Class tests
 printHeader("Classes")
 
--- Setup our path so we can include LuaClass
-local mainBundle = objc.class("NSBundle"):mainBundle()
-local resourcePath = mainBundle:resourcePath()
-package.path = package.path .. ";" .. resourcePath .. "/?.lua"
-
-
 require("LuaClass")
 local luaObj = objc.class("LuaClass"):alloc():init()
 print(tostring(luaObj))
