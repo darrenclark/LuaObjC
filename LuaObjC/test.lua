@@ -50,7 +50,6 @@ end
 
 -- Struct tests
 printHeader("Struct tests")
-CGRect = objc.struct.def("CGRect", "ffff", {"x","y","width","height"})
 print(tostring(CGRect))
 
 local myRect = CGRect(10.0, 20.0, 30.0, 40.0)
@@ -181,6 +180,9 @@ luaObj:testMethod()
 luaObj:argTest(5)
 testClassInstance:breakpoint()
 luaObj:showAlert()
+luaObj:setRect(CGPoint(4, 5))
+luaObj:rect()
+--testClassInstance:printRect(luaObj:rect())
 
 -- End
 printHeader("... Done tests")

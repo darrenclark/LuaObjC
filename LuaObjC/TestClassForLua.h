@@ -6,7 +6,15 @@
 
 #import <Foundation/Foundation.h>
 
-@interface TestClassForLua : NSObject
+// used in LuaClass to test passing structs to ObjC methods implemented in Lua
+@protocol RectTest <NSObject>
+@optional
+- (void)setRect:(CGPoint)rect;
+- (CGPoint)rect;
+@end
+
+
+@interface TestClassForLua : NSObject <RectTest>
 
 + (void)testMethod;
 

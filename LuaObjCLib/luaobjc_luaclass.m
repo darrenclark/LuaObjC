@@ -4,6 +4,7 @@
 #import "luaobjc_object.h"
 #import "luaobjc_sel_cache.h"
 #import "luaobjc_selector.h"
+#import "luaobjc_struct.h"
 
 #import "ffi.h"
 #import <objc/runtime.h>
@@ -59,7 +60,7 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 // Binds property setter/getters
 static void bind_property(Class cls, ivar_info ivar_info, const char *setter, const char *getter);
 // Returns the ffi_type for a objc type
-static ffi_type *type_for_objc_type(const char *type_encoding);
+static ffi_type *type_for_objc_type(lua_State *L, const char *type_encoding);
 
 void luaobjc_luaclass_open(lua_State *L) {
 	// 'objc' global is at the top of the stack. make sure it is still there
@@ -177,7 +178,7 @@ static int luaclass_property(lua_State *L) {
 	
 	unsigned int size, alignment;
 	NSGetSizeAndAlignment("@", &size, &alignment);
-	class_addIvar(class->class, name, size, (uint8_t)alignment, "@");
+	BOOL success = class_addIvar(class->class, name, size, (uint8_t)alignment, "@");
 	
 	Ivar ivar = class_getInstanceVariable(class->class, name);
 	ivar_info ivar_info;
@@ -185,14 +186,15 @@ static int luaclass_property(lua_State *L) {
 	ivar_info.ivar = ivar;
 	ivar_info.memory_policy = (property_memory_policy)memory_policy;
 	
-	int setter_len = strlen(name) + 4;
-	char setter[setter_len]; // 3 for set, one for \0
+	int setter_len = strlen(name) + 5; // 3 for "set", one for ':', one for \0
+	char setter[setter_len]; 
 	
 	strcpy(setter, "set");
 	strcpy((char *)setter + 3, name);
 	
 	if (setter[3] >= 'a' && setter[3] <= 'z')
 		setter[3] = setter[3] += ('A' - 'a'); // convert to uppercase
+	setter[setter_len - 2] = ':';
 	setter[setter_len - 1] = '\0';
 	
 	bind_property(class->class, ivar_info, setter, name);
@@ -442,6 +444,11 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 			case '@': luaobjc_object_push(L, *(id *)args[arg_index]); break;
 			case '#': luaobjc_object_push(L, *(Class *)args[arg_index]); break;
 			case ':': luaobjc_selector_push(L, *(SEL *)args[arg_index]); break;
+			case '{': {
+				char struct_name[strlen(type)];
+				luaobjc_method_sig_struct_name(type, struct_name);
+				luaobjc_struct_push(L, struct_name, args[arg_index]);
+			} break;
 			default: lua_pushnil(L); break;
 		}
 	}
@@ -472,6 +479,12 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 			case '@': *(id *)ret = NULL; break;
 			case '#': *(Class *)ret = NULL; break;
 			case ':': *(SEL *)ret = NULL; break;
+			case '{':  { // for better or for worse, just zero out *ret here
+				char struct_name[strlen(sig)];
+				luaobjc_method_sig_struct_name(sig, struct_name);
+				size_t size = luaobjc_struct_size(L, struct_name);
+				memset(ret, 0, size);
+			} break;
 		}
 	} else {
 		switch (sig[0]) {
@@ -498,6 +511,13 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 			case '@': *(id *)ret = luaobjc_to_objc(L, -1); break;
 			case '#': *(Class *)ret = (Class)luaobjc_to_objc(L, -1); break;
 			case ':': *(SEL *)ret = (SEL)luaobjc_selector_check_s(L, -1); break;
+			case '{': {
+				char struct_name[strlen(sig)];
+				luaobjc_method_sig_struct_name(sig, struct_name);
+				void *struct_ptr = luaobjc_struct_check(L, -1, struct_name);
+				size_t size = luaobjc_struct_size(L, struct_name);
+				memcpy(ret, struct_ptr, size);
+			} break;
 		}
 	}
 	
@@ -543,7 +563,7 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	
 	for (int i = 0; i < num_args; i++) {
 		const char *method_sig_arg = luaobjc_method_sig_arg(type_encoding, i);
-		ffi_type *type = type_for_objc_type(method_sig_arg);
+		ffi_type *type = type_for_objc_type(L, method_sig_arg);
 		if (type == NULL) {
 			lua_pushfstring(L, "invalid type for [%@ %s]: %c", class->class, (const char *)sel, *method_sig_arg);
 			lua_error(L);
@@ -551,7 +571,7 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 		ffi_info->args[i] = type;
 	}
 	
-	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args, type_for_objc_type(type_encoding), ffi_info->args);
+	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args, type_for_objc_type(L, type_encoding), ffi_info->args);
 	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, method_binding, (void *)L, bound_method);
 	
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
@@ -575,11 +595,8 @@ static ivar_info get_prop_ivar_info(id obj, SEL selector) {
 
 static void prop_set_binding(id self, SEL _cmd, id value) {
 	ivar_info ivar = get_prop_ivar_info(self, _cmd);
-	if (ivar.memory_policy == property_memory_policy_retain
-		|| ivar.memory_policy == property_memory_policy_copy) {
-		id prev = object_getIvar(self, ivar.ivar);
-		[prev release];
-	}
+	
+	id prev = object_getIvar(self, ivar.ivar);
 	
 	if (ivar.memory_policy == property_memory_policy_retain)
 		[value retain];
@@ -587,6 +604,11 @@ static void prop_set_binding(id self, SEL _cmd, id value) {
 		value = [value copy];
 	
 	object_setIvar(self, ivar.ivar, value);
+	
+	if (ivar.memory_policy == property_memory_policy_retain
+		|| ivar.memory_policy == property_memory_policy_copy) {
+		[prev release];
+	}
 }
 
 static id prop_get_binding(id self, SEL _cmd) {
@@ -595,7 +617,9 @@ static id prop_get_binding(id self, SEL _cmd) {
 }
 
 static void bind_property(Class cls, ivar_info ivar_info, const char *setter, const char *getter) {
-	NSValue *boxedIvar = [NSValue value:(void *)&ivar_info withObjCType:@encode(typeof(ivar_info))];
+	NSValue *boxedIvar = [NSValue value:(void *)&ivar_info withObjCType:@encode(struct ivar_info)];
+	struct ivar_info test_ivar;
+	[boxedIvar getValue:&test_ivar];
 	
 	SEL setterSel = sel_getUid(setter);
 	objc_setAssociatedObject(cls, setterSel, boxedIvar, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -606,7 +630,7 @@ static void bind_property(Class cls, ivar_info ivar_info, const char *setter, co
 	class_addMethod(cls, getterSel, (IMP)prop_get_binding, "@@:");
 }
 
-static ffi_type *type_for_objc_type(const char *type_encoding) {
+static ffi_type *type_for_objc_type(lua_State *L, const char *type_encoding) {
 	// Set ret_type
 	switch (type_encoding[0]) {
 		case 'c': return &ffi_type_sint8;
@@ -627,6 +651,11 @@ static ffi_type *type_for_objc_type(const char *type_encoding) {
 		case '@': return &ffi_type_pointer;
 		case '#': return &ffi_type_pointer;
 		case ':': return &ffi_type_pointer;
+		case '{': {
+			char struct_name[strlen(type_encoding)];
+			luaobjc_method_sig_struct_name(type_encoding, struct_name);
+			return luaobjc_struct_get_ffi(L, struct_name);
+		}
 		default: return NULL;
 	}
 }
