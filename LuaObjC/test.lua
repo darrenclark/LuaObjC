@@ -183,7 +183,7 @@ luaObj:setRect(CGRect(4, 5, 6, 7))
 testClassInstance:breakpoint()
 testClassInstance:printRect(luaObj:rect())
 
-local pt = CGPoint(1, 1)
+local pt = CGPoint(1.68, 1.73)
 luaObj:setPt(pt)
 print(luaObj:pt().x, luaObj:pt().y)
 

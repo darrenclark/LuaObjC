@@ -542,17 +542,20 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	int num_args = luaobjc_method_sig_num_types(type_encoding) - 1;
 	
 	BOOL use_stret = NO;
+	BOOL hack_i386_ret = NO; // See near end of function for details
 	if (type_encoding[0] == '{') {
 		unsigned int stret_size;
 		NSGetSizeAndAlignment(type_encoding, &stret_size, NULL);
-#ifdef __arm__
+#if defined(__arm__)
 		// arm
 		if (stret_size > 4)
 			use_stret = YES;
-#else
+#elif defined(__i386__)
 		// i386
 		if (stret_size > 8)
 			use_stret = YES;
+		else
+			hack_i386_ret = YES;
 #endif
 	}
 	int extra_stret_arg = use_stret ? 1 : 0;
@@ -609,7 +612,14 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	void (*closure_func)(ffi_cif*,void*,void**,void*) = use_stret ?
 		method_binding_stret : method_binding;
 	
-	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args + extra_stret_arg, type_for_objc_type(L, type_encoding), ffi_info->args);
+	ffi_type *ret_type = type_for_objc_type(L, type_encoding);
+	// On i386, returning a CGPoint wasn't giving correct values. To fix this,
+	// we tell libffi that we are returning a uint64. This *seems* to correct
+	// the issue.
+	if (hack_i386_ret)
+		ret_type = &ffi_type_uint64;
+	
+	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args + extra_stret_arg, ret_type, ffi_info->args);
 	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, closure_func, (void *)L, bound_method);
 	
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
