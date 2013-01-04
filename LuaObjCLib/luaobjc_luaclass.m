@@ -378,7 +378,7 @@ static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_
 	return found_method;
 }
 
-static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata) {
+static void method_binding_internal(ffi_cif *cif, void *ret, void *args[], void *userdata) {
 	lua_State *L = (lua_State *)userdata;
 	
 	id target = *(id *)args[0];
@@ -524,8 +524,38 @@ static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata
 	lua_pop(L, 4); // (empty stack)
 }
 
+static void method_binding(ffi_cif *cif, void *ret, void *args[], void *userdata) {
+	// forward everything onto method_binding_internal as usual
+	method_binding_internal(cif, ret, args, userdata);
+}
+
+static void method_binding_stret(ffi_cif *cif, void *ret, void *args[], void *userdata) {
+	// since objc_msgSend_stret has this signature:
+	// void objc_msgSend_stret(void *, id, SEL, ...), we want to pass in slightly
+	// different values to method_binding_internal:
+	// void *ret -> our args[0]
+	// void *args[] -> &(args[1])
+	method_binding_internal(cif, *(void **)args[0], &(args[1]), userdata);
+}
+
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding) {
 	int num_args = luaobjc_method_sig_num_types(type_encoding) - 1;
+	
+	BOOL use_stret = NO;
+	if (type_encoding[0] == '{') {
+		unsigned int stret_size;
+		NSGetSizeAndAlignment(type_encoding, &stret_size, NULL);
+#ifdef __arm__
+		// arm
+		if (stret_size > 4)
+			use_stret = YES;
+#else
+		// i386
+		if (stret_size > 8)
+			use_stret = YES;
+#endif
+	}
+	int extra_stret_arg = use_stret ? 1 : 0;
 	
 	// we store a table with details regarding a method in a table
 	//	METHOD_FUNC_INDEX -> the lua function to call
@@ -541,7 +571,8 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	lua_rawset(L, -3); // ..., fenv, sel, tbl
 	
 	lua_pushinteger(L, METHOD_FFI_INDEX); // ..., fenv, sel, tbl, METHOD_FFI_INDEX
-	method_ffi_info *ffi_info = (method_ffi_info *)lua_newuserdata(L, sizeof(method_ffi_info) + sizeof(ffi_type *) * num_args);
+	method_ffi_info *ffi_info = (method_ffi_info *)lua_newuserdata(L,
+		sizeof(method_ffi_info) + sizeof(ffi_type *) * (num_args + extra_stret_arg));
 	// ..., fenv, sel, tbl, METHOD_FFI_INDEX, method_ffi_info
 	lua_rawset(L, -3); // ..., fenv, sel, tbl
 	
@@ -561,6 +592,9 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	
 	ffi_info->closure = ffi_closure_alloc(sizeof(ffi_closure), (void **)&bound_method);
 	
+	if (use_stret)
+		ffi_info->args[0] = &ffi_type_void;
+		// shift args possibly by 1 (extra_stret_arg) is use_stret == YES
 	for (int i = 0; i < num_args; i++) {
 		const char *method_sig_arg = luaobjc_method_sig_arg(type_encoding, i);
 		ffi_type *type = type_for_objc_type(L, method_sig_arg);
@@ -568,11 +602,15 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 			lua_pushfstring(L, "invalid type for [%@ %s]: %c", class->class, (const char *)sel, *method_sig_arg);
 			lua_error(L);
 		}
-		ffi_info->args[i] = type;
+		// shift args possibly by 1 (extra_stret_arg) is use_stret == YES
+		ffi_info->args[i + extra_stret_arg] = type;
 	}
 	
-	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args, type_for_objc_type(L, type_encoding), ffi_info->args);
-	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, method_binding, (void *)L, bound_method);
+	void (*closure_func)(ffi_cif*,void*,void**,void*) = use_stret ?
+		method_binding_stret : method_binding;
+	
+	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args + extra_stret_arg, type_for_objc_type(L, type_encoding), ffi_info->args);
+	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, closure_func, (void *)L, bound_method);
 	
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
 }

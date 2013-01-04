@@ -21,14 +21,20 @@ end
 
 -- TEMP FIX. PROPERTIES ARE BROKEN
 local savedRect = CGRect(0,0,0,0)
-local savedPt = CGPoint(1,1)
 function cls:setRect_(rect)
-	--savedRect = rect
-	savedPt = rect
+	savedRect = rect
 end
 
 function cls:rect()
-	--return savedRect
+	return savedRect
+end
+
+local savedPt = CGPoint(0,0)
+function cls:setPt_(point)
+	savedPt = point
+end
+
+function cls:pt()
 	return savedPt
 end
 

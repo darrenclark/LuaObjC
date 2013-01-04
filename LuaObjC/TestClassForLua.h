@@ -9,8 +9,10 @@
 // used in LuaClass to test passing structs to ObjC methods implemented in Lua
 @protocol RectTest <NSObject>
 @optional
-- (void)setRect:(CGPoint)rect;
-- (CGPoint)rect;
+- (void)setRect:(CGRect)rect;
+- (CGRect)rect;
+- (void)setPt:(CGPoint)pt;
+- (CGPoint)pt;
 @end
 
 

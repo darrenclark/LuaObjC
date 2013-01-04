@@ -178,11 +178,14 @@ local luaObj = objc.class("LuaClass"):alloc():init()
 print(tostring(luaObj))
 luaObj:testMethod()
 luaObj:argTest(5)
-testClassInstance:breakpoint()
 luaObj:showAlert()
-luaObj:setRect(CGPoint(4, 5))
-luaObj:rect()
---testClassInstance:printRect(luaObj:rect())
+luaObj:setRect(CGRect(4, 5, 6, 7))
+testClassInstance:breakpoint()
+testClassInstance:printRect(luaObj:rect())
+
+local pt = CGPoint(1, 1)
+luaObj:setPt(pt)
+print(luaObj:pt().x, luaObj:pt().y)
 
 -- End
 printHeader("... Done tests")
