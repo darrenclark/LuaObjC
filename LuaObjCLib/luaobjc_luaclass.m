@@ -37,10 +37,19 @@ typedef struct method_ffi_info {
 } method_ffi_info;
 
 
-typedef struct ivar_info {
-	Ivar ivar;
-	property_memory_policy memory_policy;
-} ivar_info;
+
+@interface LuaObjCIvarInfo : NSObject
+@property (nonatomic, assign) property_memory_policy memoryPolicy;
+@property (nonatomic, retain) NSString *ivarName;
+@end
+
+@implementation LuaObjCIvarInfo
+@synthesize memoryPolicy, ivarName;
+- (void)dealloc {
+	[ivarName release];
+	[super dealloc];
+}
+@end
 
 
 static luaclass *check_luaclass(lua_State *L, int idx);
@@ -58,7 +67,7 @@ static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_
 // Binds a ObjC function to a Lua function
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding);
 // Binds property setter/getters
-static void bind_property(Class cls, ivar_info ivar_info, const char *setter, const char *getter);
+static void bind_property(Class cls, LuaObjCIvarInfo *ivarInfo, const char *setter, const char *getter);
 // Returns the ffi_type for a objc type
 static ffi_type *type_for_objc_type(lua_State *L, const char *type_encoding);
 
@@ -178,13 +187,11 @@ static int luaclass_property(lua_State *L) {
 	
 	unsigned int size, alignment;
 	NSGetSizeAndAlignment("@", &size, &alignment);
-	BOOL success = class_addIvar(class->class, name, size, (uint8_t)alignment, "@");
+	class_addIvar(class->class, name, size, (uint8_t)alignment, "@");
 	
-	Ivar ivar = class_getInstanceVariable(class->class, name);
-	ivar_info ivar_info;
-	
-	ivar_info.ivar = ivar;
-	ivar_info.memory_policy = (property_memory_policy)memory_policy;
+	LuaObjCIvarInfo *ivarInfo = [[LuaObjCIvarInfo alloc] init];
+	ivarInfo.memoryPolicy = memory_policy;
+	ivarInfo.ivarName = [NSString stringWithUTF8String:name];
 	
 	int setter_len = strlen(name) + 5; // 3 for "set", one for ':', one for \0
 	char setter[setter_len]; 
@@ -197,7 +204,7 @@ static int luaclass_property(lua_State *L) {
 	setter[setter_len - 2] = ':';
 	setter[setter_len - 1] = '\0';
 	
-	bind_property(class->class, ivar_info, setter, name);
+	bind_property(class->class, ivarInfo, setter, name);
 	
 	return 0;
 }
@@ -625,56 +632,65 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
 }
 
-static ivar_info get_prop_ivar_info(id obj, SEL selector) {
+static LuaObjCIvarInfo *get_prop_ivar_info(id obj, SEL selector) {
 	Class cls = [obj class];
 	while (cls != [cls superclass]) {
-		NSValue *val = objc_getAssociatedObject(cls, selector);
-		if (val != NULL) {
-			ivar_info ivar;
-			[val getValue:&ivar];
-			return ivar;
-		}
-		cls = [cls superclass];
+		id ivarInfo = objc_getAssociatedObject(cls, selector);
+		if (ivarInfo)
+			return ivarInfo;
 	}
-	ivar_info ret;
-	ret.ivar = NULL;
-	return ret;
+	return nil;
 }
 
 static void prop_set_binding(id self, SEL _cmd, id value) {
-	ivar_info ivar = get_prop_ivar_info(self, _cmd);
+	LuaObjCIvarInfo *ivarInfo = get_prop_ivar_info(self, _cmd);
+	if (ivarInfo == nil)
+		return;
 	
-	id prev = object_getIvar(self, ivar.ivar);
+	id prev;
+	// if this looks weird to you, its because object_getInstanceVariable's function
+	// prototype is a little screwy. see:
+	// http://www.cocoabuilder.com/archive/cocoa/294230-ivars-and-fundamental-types.html
+	Ivar ivar = object_getInstanceVariable(self, ivarInfo.ivarName.UTF8String, (void**)&prev);
 	
-	if (ivar.memory_policy == property_memory_policy_retain)
+	property_memory_policy mem_policy = ivarInfo.memoryPolicy;
+	
+	if (mem_policy == property_memory_policy_retain)
 		[value retain];
-	else if (ivar.memory_policy == property_memory_policy_copy)
+	else if (mem_policy == property_memory_policy_copy)
 		value = [value copy];
 	
-	object_setIvar(self, ivar.ivar, value);
+	object_setIvar(self, ivar, value);
 	
-	if (ivar.memory_policy == property_memory_policy_retain
-		|| ivar.memory_policy == property_memory_policy_copy) {
+	if (prev != nil && (mem_policy == property_memory_policy_retain || mem_policy == property_memory_policy_copy)) {
 		[prev release];
 	}
 }
 
 static id prop_get_binding(id self, SEL _cmd) {
-	ivar_info ivar = get_prop_ivar_info(self, _cmd);
-	return object_getIvar(self, ivar.ivar);
+	LuaObjCIvarInfo *ivar = get_prop_ivar_info(self, _cmd);
+	if (ivar == nil)
+		return nil;
+	
+	id value;
+	// if this looks weird to you, its because object_getInstanceVariable's function
+	// prototype is a little screwy. see:
+	// http://www.cocoabuilder.com/archive/cocoa/294230-ivars-and-fundamental-types.html
+	object_getInstanceVariable(self, ivar.ivarName.UTF8String, (void**)&value);
+	
+	if (value)
+		return value;
+	else
+		return nil;
 }
 
-static void bind_property(Class cls, ivar_info ivar_info, const char *setter, const char *getter) {
-	NSValue *boxedIvar = [NSValue value:(void *)&ivar_info withObjCType:@encode(struct ivar_info)];
-	struct ivar_info test_ivar;
-	[boxedIvar getValue:&test_ivar];
-	
+static void bind_property(Class cls, LuaObjCIvarInfo *ivarInfo, const char *setter, const char *getter) {
 	SEL setterSel = sel_getUid(setter);
-	objc_setAssociatedObject(cls, setterSel, boxedIvar, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	objc_setAssociatedObject(cls, setterSel, ivarInfo, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 	class_addMethod(cls, setterSel, (IMP)prop_set_binding, "v@:@");
 	
 	SEL getterSel = sel_getUid(getter);
-	objc_setAssociatedObject(cls, getterSel, boxedIvar, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	objc_setAssociatedObject(cls, getterSel, ivarInfo, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 	class_addMethod(cls, getterSel, (IMP)prop_get_binding, "@@:");
 }
 

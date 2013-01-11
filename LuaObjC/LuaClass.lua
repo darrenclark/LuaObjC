@@ -1,8 +1,6 @@
 local cls = objc.new_class("LuaClass", "NSObject", {"UIAlertViewDelegate", "RectTest"})
-cls:property("x", objc.RETAIN)
-cls:property("y", objc.RETAIN)
-cls:property("width", objc.RETAIN)
-cls:property("height", objc.RETAIN)
+cls:property("rectObj", objc.RETAIN)
+cls:property("pointObj", objc.RETAIN)
 cls:register()
 
 function cls:description()
@@ -19,23 +17,20 @@ end
 
 -- Struct tests
 
--- TEMP FIX. PROPERTIES ARE BROKEN
-local savedRect = CGRect(0,0,0,0)
 function cls:setRect_(rect)
-	savedRect = rect
+	self:setRectObj(objc.class("NSValue"):valueWithCGRect(rect))
 end
 
 function cls:rect()
-	return savedRect
+	return self:rectObj():CGRectValue()
 end
 
-local savedPt = CGPoint(0,0)
 function cls:setPt_(point)
-	savedPt = point
+	self:setPointObj(objc.class("NSValue"):valueWithCGPoint(point))
 end
 
 function cls:pt()
-	return savedPt
+	return self:pointObj():CGPointValue()
 end
 
 -- UIAlertView stuff
