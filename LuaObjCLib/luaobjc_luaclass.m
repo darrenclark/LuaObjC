@@ -52,20 +52,44 @@ typedef struct method_ffi_info {
 @end
 
 
+@interface LuaObjCMethodDecl : NSObject
+@property (nonatomic, assign) BOOL instanceMethod;
+@property (nonatomic, retain) NSString *types;
+@end
+
+@implementation LuaObjCMethodDecl
+@synthesize instanceMethod, types;
+- (void)dealloc {
+	[types release];
+	[super dealloc];
+}
+@end
+
+
+// - used with ObjC associated objects for declaring a method before defining it
+// (specifically, when the return type + parameters aren't all '@')
+// - attached to the Class and contains a dictionary of:
+//	SEL (wrapped in NSValue) -> 
+static const char *const method_declarations = "declarations";
+
 static luaclass *check_luaclass(lua_State *L, int idx);
 
 static int new_luaclass(lua_State *L);
 static int luaclass_newindex(lua_State *L);
 static int luaclass_register(lua_State *L);
+static int luaclass_decl(lua_State *L);
 static int luaclass_property(lua_State *L);
 
 // Determines the selector and method for a given string at 'str_idx'
-static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method, const char **types);
+static void determine_selector_method(lua_State *L, int str_idx, Class cls,
+									  SEL *sel, Method *method, const char **types, BOOL *instance_method);
 // Checks through this class + superclass(es) protocols to find a method
 // returns YES and puts the method in out_description on success. otherwise returns NO
 static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_description *out_description);
+// Checks any methods declared via luaclass:decl() for a selector
+static BOOL check_declarations_for_selector(Class cls, SEL sel, const char **types, BOOL *instance_method);
 // Binds a ObjC function to a Lua function
-static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding);
+static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding, BOOL instance_method);
 // Binds property setter/getters
 static void bind_property(Class cls, LuaObjCIvarInfo *ivarInfo, const char *setter, const char *getter);
 // Returns the ffi_type for a objc type
@@ -81,6 +105,7 @@ void luaobjc_luaclass_open(lua_State *L) {
 	
 	LUAOBJC_ADD_METHOD("register", luaclass_register);
 	LUAOBJC_ADD_METHOD("property", luaclass_property);
+	LUAOBJC_ADD_METHOD("decl", luaclass_decl);
 	LUAOBJC_ADD_METHOD("__newindex", luaclass_newindex);
 	lua_pop(L, 1); // pop metatable
 	
@@ -171,6 +196,61 @@ static int luaclass_register(lua_State *L) {
 	return 1;
 }
 
+static int luaclass_decl(lua_State *L) {
+	luaclass *class = check_luaclass(L, 1);
+	
+	// a declaration is in the form of one of:
+	// 'someMethod:' (defaults to instance method), '-someMethod:', or '+someMethod'
+	size_t method_name_len;
+	const char *method_name = luaL_checklstring(L, 2, &method_name_len);
+	
+	// verify we have at least one char, we will need to check again later
+	// if the first character is '-' or '+'
+	luaL_argcheck(L, method_name_len >= 1, 2, "method name is too short");
+	
+	BOOL is_instance_method = YES;
+	if (method_name[0] == '-' || method_name[0] == '+') {
+		luaL_argcheck(L, method_name_len >= 2, 2, "method name is too short");
+		
+		is_instance_method = (method_name[0] == '-');
+		method_name += 1; // name starts at one past the -/+
+		method_name_len -= 1;
+	}
+	
+	// TODO: Read types from Lua!! For now default to returning an 'id' and
+	// each arg is an 'id'
+	NSMutableString *types = [NSMutableString stringWithString:@"@@:"];
+	
+	const char *sel_scanner = method_name;
+	for (; *sel_scanner != '\0'; sel_scanner++) {
+		// check we have a valid character
+		char ch = *sel_scanner;
+		// a-z, A-Z, _ or :
+		BOOL valid_char = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == ':';
+		luaL_argcheck(L, valid_char, 2, "method name has invalid chars");
+		
+		if (ch == ':')
+			[types appendString:@"@"];
+	}
+	
+	LuaObjCMethodDecl *decl = [[[LuaObjCMethodDecl alloc] init] autorelease];
+	decl.instanceMethod = is_instance_method;
+	decl.types = types;
+	
+	SEL sel = luaobjc_get_sel(L, method_name);
+	NSValue *sel_value = [NSValue valueWithPointer:sel];
+	
+	NSMutableDictionary *decls = objc_getAssociatedObject(class->class, method_declarations);
+	if (decls == nil) {
+		decls = [NSMutableDictionary dictionaryWithCapacity:1];
+		objc_setAssociatedObject(class->class, method_declarations,
+								 decls, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	[decls setObject:decl forKey:sel_value];
+	
+	return 0;
+}
+
 static int luaclass_property(lua_State *L) {
 	luaclass *class = check_luaclass(L, 1);
 	if (class->registered) {
@@ -219,7 +299,8 @@ static int luaclass_newindex(lua_State *L) {
 	SEL selector = NULL;
 	Method method = NULL;
 	const char *types = NULL;
-	determine_selector_method(L, 2, cls->class, &selector, &method, &types);
+	BOOL is_instance_method = YES;
+	determine_selector_method(L, 2, cls->class, &selector, &method, &types, &is_instance_method);
 	
 	if (method != NULL) {
 		const char *enc = method_getTypeEncoding(method);
@@ -231,14 +312,14 @@ static int luaclass_newindex(lua_State *L) {
 		
 		luaobjc_method_sig_convert(enc, enc_fixed);
 		
-		bind_method(L, 1, 3, selector, enc_fixed);
+		bind_method(L, 1, 3, selector, enc_fixed, is_instance_method);
 	} else if (types != NULL) {
 		size_t enc_len = strlen(types) * 2; // we want to make sure we have enough room for '|'
 		char enc_fixed[enc_len + 1];
 		
 		luaobjc_method_sig_convert(types, enc_fixed);
 		
-		bind_method(L, 1, 3, selector, enc_fixed);
+		bind_method(L, 1, 3, selector, enc_fixed, is_instance_method);
 	} else {
 		// no info to go by, so just assume that they want a method something like: @@:
 		// we also want to create it in our own internal usable format that includes
@@ -262,17 +343,19 @@ static int luaclass_newindex(lua_State *L) {
 			sig[i * 2 + 1] = (i == num_types - 1) ? '\0' : '|';
 		}
 		
-		bind_method(L, 1, 3, selector, sig);
+		bind_method(L, 1, 3, selector, sig, is_instance_method);
 	}
 	
 	return 0;
 }
 
 
-static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL *sel, Method *method, const char **types) {
+static void determine_selector_method(lua_State *L, int str_idx, Class cls,
+									  SEL *sel, Method *method, const char **types, BOOL *instance_method) {
 	*sel = NULL;
 	*method = NULL;
 	*types = NULL;
+	*instance_method = YES;
 	
 	size_t len;
 	const char *str = lua_tolstring(L, str_idx, &len);
@@ -297,6 +380,10 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 		transformed[len] = ':';
 		
 	SEL selector = luaobjc_get_sel(L, transformed);
+	if (check_declarations_for_selector(cls, selector, types, instance_method)) {
+		*sel = selector;
+		return;
+	}
 	
 	Method m = class_getInstanceMethod(cls, selector);
 	if (m != NULL) {
@@ -316,6 +403,12 @@ static void determine_selector_method(lua_State *L, int str_idx, Class cls, SEL 
 		// Try again by adding one arg to the end
 		transformed[len] = ':';
 		SEL fallback = luaobjc_get_sel(L, transformed);
+		
+		if (check_declarations_for_selector(cls, fallback, types, instance_method)) {
+			*sel = fallback;
+			return;
+		}
+		
 		m = class_getInstanceMethod(cls, fallback);
 		
 		if (m) {
@@ -383,6 +476,23 @@ static BOOL check_protocols_for_selector(Class cls, SEL sel, struct objc_method_
 	}
 	
 	return found_method;
+}
+
+static BOOL check_declarations_for_selector(Class cls, SEL sel, const char **types, BOOL *instance_method) {
+	*types = NULL;
+	*instance_method = YES;
+	
+	NSDictionary *decls = objc_getAssociatedObject(cls, method_declarations);
+	NSValue *sel_value = [NSValue valueWithPointer:sel];
+	
+	LuaObjCMethodDecl *decl = [decls objectForKey:sel_value];
+	if (decl) {
+		*types = [decl.types UTF8String];
+		*instance_method = decl.instanceMethod;
+		return YES;
+	}
+	
+	return NO;
 }
 
 static void method_binding_internal(ffi_cif *cif, void *ret, void *args[], void *userdata) {
@@ -545,7 +655,7 @@ static void method_binding_stret(ffi_cif *cif, void *ret, void *args[], void *us
 	method_binding_internal(cif, *(void **)args[0], &(args[1]), userdata);
 }
 
-static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding) {
+static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding, BOOL instance_method) {
 	int num_args = luaobjc_method_sig_num_types(type_encoding) - 1;
 	
 	BOOL use_stret = NO;
@@ -629,7 +739,10 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args + extra_stret_arg, ret_type, ffi_info->args);
 	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, closure_func, (void *)L, bound_method);
 	
-	class_replaceMethod(class->class, sel, (IMP)bound_method, objc_encoding);
+	Class target = class->class;
+	if (instance_method == NO)
+		target = object_getClass(class->class);
+	class_replaceMethod(target, sel, (IMP)bound_method, objc_encoding);
 }
 
 static LuaObjCIvarInfo *get_prop_ivar_info(id obj, SEL selector) {

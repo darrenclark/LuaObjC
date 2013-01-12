@@ -3,6 +3,12 @@ cls:property("rectObj", objc.RETAIN)
 cls:property("pointObj", objc.RETAIN)
 cls:register()
 
+cls:decl("+someClassMethod:")
+function cls:someClassMethod_(obj)
+	print(tostring(obj))
+	return obj
+end
+
 function cls:description()
 	return "Woo-hoo, method overriden!!"
 end

@@ -187,5 +187,7 @@ local pt = CGPoint(1.68, 1.73)
 luaObj:setPt(pt)
 print(luaObj:pt().x, luaObj:pt().y)
 
+objc.class("LuaClass"):someClassMethod_("Lets hopet this works!")
+
 -- End
 printHeader("... Done tests")
