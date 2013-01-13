@@ -1,4 +1,4 @@
-local cls = objc.new_class("LuaClass", "NSObject", {"UIAlertViewDelegate", "RectTest"})
+local cls = objc.new_class("LuaClass", "NSObject", {"UIAlertViewDelegate"})
 cls:property("rectObj", objc.RETAIN)
 cls:property("pointObj", objc.RETAIN)
 cls:register()
@@ -23,18 +23,22 @@ end
 
 -- Struct tests
 
+cls:decl("-setRect:", "v", { CGRect })
 function cls:setRect_(rect)
 	self:setRectObj(objc.class("NSValue"):valueWithCGRect(rect))
 end
 
+cls:decl("-rect", CGRect, {})
 function cls:rect()
 	return self:rectObj():CGRectValue()
 end
 
+cls:decl("-setPt:", "v", { CGPoint })
 function cls:setPt_(point)
 	self:setPointObj(objc.class("NSValue"):valueWithCGPoint(point))
 end
 
+cls:decl("-pt", CGPoint, {})
 function cls:pt()
 	return self:pointObj():CGPointValue()
 end

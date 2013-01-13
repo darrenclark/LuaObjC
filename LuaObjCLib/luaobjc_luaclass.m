@@ -217,11 +217,63 @@ static int luaclass_decl(lua_State *L) {
 		method_name_len -= 1;
 	}
 	
-	// TODO: Read types from Lua!! For now default to returning an 'id' and
-	// each arg is an 'id'
-	NSMutableString *types = [NSMutableString stringWithString:@"@@:"];
+	NSMutableString *types = [NSMutableString string];
+	
+	// Check for return type...
+	if (!lua_isnoneornil(L, 3)) {
+		const char *struct_name = luaobjc_struct_def_get_name(L, 3);
+		if (struct_name != NULL) {
+			const char *ret_type = luaobjc_struct_copy_type_encoding(L, struct_name);
+			[types appendFormat:@"%s@:", ret_type];
+			free((void*)ret_type);
+		} else {
+			const char *ret_type = luaL_checkstring(L, 3);
+			
+			BOOL valid_ret_type = type_for_objc_type(L, ret_type) != NULL;
+			luaL_argcheck(L, valid_ret_type, 3, "invalid method return type");
+			
+			[types appendFormat:@"%s@:", ret_type];
+		}
+	} else {
+		// default to void return
+		[types appendString:@"v@:"];
+	}
+	
+	// read argument types if available
+	int num_args = -1;  // -1 means no arg types specified
+	if (!lua_isnoneornil(L, 4)) {
+		luaL_checktype(L, 4, LUA_TTABLE);
+		
+		num_args = 0;
+		for (int i = 1; true; i++) {
+			lua_rawgeti(L, 4, i);
+			const char *struct_name = luaobjc_struct_def_get_name(L, -1);
+			if (struct_name != NULL) {
+				const char *arg_type = luaobjc_struct_copy_type_encoding(L, struct_name);
+				
+				num_args += 1;
+				[types appendFormat:@"%s", arg_type];
+				
+				free((void *)arg_type);
+			} else if (lua_isstring(L, -1)) {
+				const char *type = lua_tostring(L, -1);
+				BOOL valid_type = type_for_objc_type(L, type) != NULL;
+				
+				luaL_argcheck(L, valid_type, 4, "invalid method argument type");
+				
+				num_args += 1;
+				[types appendFormat:@"%s", type];
+				
+				lua_pop(L, 1);
+			} else {
+				lua_pop(L, 1);
+				break;
+			}
+		}
+	}
 	
 	const char *sel_scanner = method_name;
+	int counted_args = 0;
 	for (; *sel_scanner != '\0'; sel_scanner++) {
 		// check we have a valid character
 		char ch = *sel_scanner;
@@ -229,9 +281,16 @@ static int luaclass_decl(lua_State *L) {
 		BOOL valid_char = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == ':';
 		luaL_argcheck(L, valid_char, 2, "method name has invalid chars");
 		
-		if (ch == ':')
-			[types appendString:@"@"];
+		if (ch == ':') {
+			counted_args += 1;
+			
+			// if no arg types, fill in args with 'id' type
+			if (num_args == -1)
+				[types appendString:@"@"];
+		}
 	}
+	
+	luaL_argcheck(L, num_args == -1 || counted_args == num_args, 4, "number of args and selector don't match");
 	
 	LuaObjCMethodDecl *decl = [[[LuaObjCMethodDecl alloc] init] autorelease];
 	decl.instanceMethod = is_instance_method;

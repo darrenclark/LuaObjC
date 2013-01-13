@@ -138,6 +138,10 @@ BOOL luaobjc_struct_is_struct(lua_State *L, int idx) {
 	return ret_val;
 }
 
+const char *luaobjc_struct_get_name(lua_State *L, int idx) {
+	return get_struct_name(L, idx);
+}
+
 void *luaobjc_struct_push(lua_State *L, const char *struct_name, void *data) {
 	if (push_new_struct(L, struct_name)) {
 		void *structptr = lua_touserdata(L, -1);
@@ -182,6 +186,46 @@ ffi_type *luaobjc_struct_get_ffi(lua_State *L, const char *struct_name) {
 		
 		lua_pop(L, 3);
 		return &(ffi->struct_type);
+	}
+}
+
+const char *luaobjc_struct_copy_type_encoding(lua_State *L, const char *struct_name) {
+	push_global_struct(L); // ..., objc.struct
+	lua_pushstring(L, struct_name); // ..., objc.struct, struct_name
+	lua_rawget(L, -2); // ..., objc.struct, tbl
+	
+	if (lua_isnoneornil(L, -1)) {
+		lua_pop(L, 2); // <empty>
+		return NULL;
+	} else {
+		lua_rawgeti(L, -1, STRUCT_DEF_INDEX); // objc.struct, tbl, struct_def
+		struct_def *def = (struct_def *)lua_touserdata(L, -1);
+		
+		// Build the type encoding string. It'll look something like:
+		// {CGPoint=ff}
+		int str_len = 3 + strlen(struct_name) + def->field_count + 1; // 3 for {=} chars, 1 for \0
+		char *type_encoding = (char *)malloc(str_len);
+		char *cursor = type_encoding;
+		
+		*cursor = '{';
+		cursor++;
+		
+		strncpy(cursor, struct_name, strlen(struct_name));
+		cursor += strlen(struct_name);
+		
+		*cursor = '=';
+		cursor++;
+		
+		for (size_t i = 0; i < def->field_count; i++) {
+			*cursor = def->fields[i].type;
+			cursor++;
+		}
+		
+		*cursor = '}';
+		cursor++;
+		*cursor = '\0';
+		
+		return type_encoding;
 	}
 }
 
@@ -458,6 +502,34 @@ static const char *get_struct_name(lua_State *L, int idx) {
 	const char *name = lua_tostring(L, -1);
 	lua_pop(L, 2); // ...
 	return name;
+}
+
+const char *luaobjc_struct_def_get_name(lua_State *L, int idx) {
+	// convert negative idx to positive one so stack manipulations don't corrupt it
+	if (idx < 0) idx = lua_gettop(L) + idx + 1;
+	
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_STRUCT_DEF_MT, STRUCT_DEF_MT); // ..., struct_def_mt
+	
+	if (lua_istable(L, idx)) {
+		if (lua_getmetatable(L, idx)) {
+			// ..., struct_def_mt, mt
+			if (lua_rawequal(L, -1, -2)) {
+				lua_pop(L, 2); // ...
+				
+				lua_rawgeti(L, idx, STRUCT_NAME_INDEX); // ..., struct name
+				const char *struct_name = lua_tostring(L, -1);
+				lua_pop(L, 1); // ...
+				
+				return struct_name;
+			} else {
+				lua_pop(L, 2); // ...
+				return NULL;
+			}
+		}
+	}
+	
+	lua_pop(L, 1); // ...
+	return NULL;
 }
 
 static int get_struct_field_index(lua_State *L, int struct_idx, int field_idx) {

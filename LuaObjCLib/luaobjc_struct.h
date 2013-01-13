@@ -10,6 +10,11 @@ LUAOBJC_EXTERN void luaobjc_struct_open(lua_State *L);
 LUAOBJC_EXTERN void *luaobjc_struct_check(lua_State *L, int idx, const char *struct_name);
 // Returns YES/NO depending on if object at index is _any_ kind of struct
 LUAOBJC_EXTERN BOOL luaobjc_struct_is_struct(lua_State *L, int idx);
+// Returns struct name
+LUAOBJC_EXTERN const char *luaobjc_struct_get_name(lua_State *L, int idx);
+
+// Returns struct name of struct def, else returns NULL
+LUAOBJC_EXTERN const char *luaobjc_struct_def_get_name(lua_State *L, int idx);
 
 // Attempts to push a struct of type 'struct_name' and fill it with the values pointed to by 'data' (if data != NULL)
 // On success, pushes a new struct and returns a pointer to it
@@ -20,3 +25,6 @@ LUAOBJC_EXTERN void *luaobjc_struct_push(lua_State *L, const char *struct_name, 
 LUAOBJC_EXTERN size_t luaobjc_struct_size(lua_State *L, const char *struct_name);
 // Returns ffi_type* for struct_name, else returns NULL
 LUAOBJC_EXTERN ffi_type *luaobjc_struct_get_ffi(lua_State *L, const char *struct_name);
+// Returns type encoding string for struct (or NULL if struct not registered)
+// You are responsible for free()'ing the returned value!
+LUAOBJC_EXTERN const char *luaobjc_struct_copy_type_encoding(lua_State *L, const char *struct_name);
