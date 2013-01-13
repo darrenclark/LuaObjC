@@ -148,6 +148,11 @@
 	NSLog(@"Breakpoint");
 }
 
+- (NSString *)underscore_method:(NSString *)msgPt1 _pt2:(NSString *)msgPt2 {
+	NSLog(@"underscore_method called: %@ %@", msgPt1, msgPt2);
+	return [NSString stringWithFormat:@"%@ %@", msgPt1, msgPt2];
+}
+
 - (void)dealloc {
 	NSLog(@"TestClassForLua dealloc!");
 	[super dealloc];

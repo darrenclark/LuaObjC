@@ -3,18 +3,17 @@ TODO (before I consider it usable):
 - objc.super - to call super methods
 	- ideally use fast call code and fallback on exchanging self + super
 	  implementations
-- create Objective C classes in Lua
-	- handle case where LuaContext is destroyed - throw exception?
 - coroutines
 	- extensible so can be easily adapted to run via NSRunLoop or
 	  Cocos2D's CCScheduler or Sparrow's SPJuggler
 	- make cancellable and have on cancel handler
+- automatic memory management
 
 TODO (for future):
 - support structs in ffi calls
 - support Objective C blocks
-- support fast calls to Lua-created Objective C classes
 - objc.to_ffi
 
 MAYBE (eventually):
 - have fenv on userdata be linked directly to Objective-C object
+- support fast calls to Lua-created Objective C classes

@@ -25,6 +25,7 @@ static int to_objc(lua_State *L);
 static int to_lua(lua_State *L);
 static int strong_ref(lua_State *L);
 static int weak_ref(lua_State *L);
+static int call(lua_State *L);
 
 static int object_index(lua_State *L);
 static int object_newindex(lua_State *L);
@@ -33,7 +34,7 @@ static int object_gc(lua_State *L);
 static int generic_call(lua_State *L);
 
 // Utility methods
-static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target);
+static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target, BOOL disable_transformation);
 static void convert_lua_arg(lua_State *L, int lua_idx, NSInvocation *invocation, 
 							int invocation_idx, const char *encoding);
 static BOOL is_class(id object);
@@ -64,6 +65,7 @@ void luaobjc_object_open(lua_State *L) {
 	LUAOBJC_ADD_METHOD("to_lua", to_lua)
 	LUAOBJC_ADD_METHOD("strong", strong_ref)
 	LUAOBJC_ADD_METHOD("weak", weak_ref)
+	LUAOBJC_ADD_METHOD("call", call)
 }
 
 static inline void object_push_internal(lua_State *L, id object) {
@@ -382,6 +384,46 @@ static int weak_ref(lua_State *L) {
 	return 0;
 }
 
+static int call(lua_State *L) {
+	id target = luaobjc_object_check(L, 1);
+	SEL sel = luaobjc_selector_check_s(L, 2);
+	
+	int call_args = lua_gettop(L) - 2;
+	
+	lua_pushstring(L, (const char *)sel); // ..., sel
+	luaobjc_method_info *method_info = lookup_method_info(L, -1, target, YES);
+	if (method_info == NULL) {
+		// ..., sel
+		lua_pop(L, 1); // ...
+		lua_pushfstring(L, "target doesn't respond to %s", (const char *)sel);
+		lua_error(L);
+	}
+	// ..., sel, method_info
+	
+	lua_CFunction c_func = luaobjc_fastcall_get(method_info);
+	if (c_func != NULL) {
+		lua_pushcclosure(L, c_func, 1);
+	} else {
+		c_func = luaobjc_fficall_get(method_info);
+		if (c_func != NULL) {
+			lua_pushcclosure(L, c_func, 1);
+		} else {
+			lua_pushcclosure(L, generic_call, 1);
+		}
+	}
+	// ..., sel, c_func
+	lua_replace(L, -2); // ..., c_func
+	
+	lua_pushvalue(L, 1); // ..., c_func, self
+	for (int i = 1; i <= call_args; i++)
+		lua_pushvalue(L, 2 + i);
+	// ..., c_func, self, ...args..
+	
+	// call the c closure we just pushed
+	lua_call(L, call_args + 1, 1); // ..., result
+	return 1;
+}
+
 static int object_index(lua_State *L) {
 	// check if it exists in our table
 	lua_getfenv(L, 1); // t, k, fenv
@@ -399,7 +441,7 @@ static int object_index(lua_State *L) {
 	id object = luaobjc_object_get(L, 1);
 	
 	// check if it is a method on object
-	luaobjc_method_info *method_info = lookup_method_info(L, 2, object);
+	luaobjc_method_info *method_info = lookup_method_info(L, 2, object, NO);
 	if (method_info != NULL) {
 		// t, k, fenv, method_info
 		
@@ -622,7 +664,7 @@ static int generic_call(lua_State *L) {
 //
 // TODO: implement a way to call selectors that don't conform to this (for example,
 // selectors with _'s in them)
-static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target) {
+static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target, BOOL disable_transformation) {
 	size_t len;
 	const char *str = luaL_checklstring(L, idx, &len);
 	
@@ -633,17 +675,26 @@ static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target)
 	
 	BOOL has_args = NO;
 	
-	// replace all _'s with :'s
-	for (int i = 0; i < len; i++) {
-		if (transformed[i] == '_') {
-			transformed[i] = ':';
-			has_args = YES;
+	if (!disable_transformation) {
+		// replace all _'s with :'s
+		for (int i = 0; i < len; i++) {
+			if (transformed[i] == '_') {
+				transformed[i] = ':';
+				has_args = YES;
+			}
+		}
+		
+		// if we have at least one other ':' and no trailing ':', we need to add the trailing ':'
+		if (has_args && transformed[len-1] != ':')
+			transformed[len] = ':';
+	} else {
+		for (int i = 0; i < len; i++) {
+			if (transformed[i] == ':') {
+				has_args = YES;
+				break;
+			}
 		}
 	}
-	
-	// if we have at least one other ':' and no trailing ':', we need to add the trailing ':'
-	if (has_args && transformed[len-1] != ':')
-		transformed[len] = ':';
 	
 	// if target is a class, target_class should be null...
 	Class target_class = is_class(target) ? NULL : object_getClass(target);
@@ -655,7 +706,7 @@ static luaobjc_method_info *lookup_method_info(lua_State *L, int idx, id target)
 	Method m = target_class ? class_getInstanceMethod(target_class, sel) : class_getClassMethod(target, sel);
 	if (m != NULL) {
 		used_sel = sel;
-	} else if (m == NULL && !has_args) {
+	} else if (m == NULL && !has_args && !disable_transformation) {
 		// Try again by adding one arg to the end
 		transformed[len] = ':';
 		fallback_sel = luaobjc_get_sel(L, transformed);

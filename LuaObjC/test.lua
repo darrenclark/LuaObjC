@@ -170,6 +170,9 @@ for j = 1, 5 do
 	collectgarbage("collect")
 end
 
+-- objc.call/objc.super tests
+print(objc.call(testClassInstance, "underscore_method:_pt2:", "Hello", "World"))
+
 -- Class tests
 printHeader("Classes")
 

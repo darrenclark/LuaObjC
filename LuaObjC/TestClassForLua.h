@@ -56,4 +56,6 @@
 
 - (void)breakpoint;
 
+- (NSString *)underscore_method:(NSString *)msgPt1 _pt2:(NSString *)msgPt2;
+
 @end
