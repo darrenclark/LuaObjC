@@ -20,7 +20,7 @@ void luaobjc_open(lua_State *L) {
 	lua_setglobal(L, LUA_NAMESPACE);
 	lua_getglobal(L, LUA_NAMESPACE);
 	
-	luaobjc_object_open(L);  // LUAOBJC_REGISTRY_OBJECT_MT, LUAOBJC_REGISTRY_UNKNOWN_MT
+	luaobjc_object_open(L);  // LUAOBJC_REGISTRY_OBJECT_MT, LUAOBJC_REGISTRY_OBJECTS, LUAOBJC_REGISTRY_UNKNOWN_MT
 	luaobjc_benchmark_open(L); // LUAOBJC_REGISTRY_BENCHMARKS
 	luaobjc_sel_cache_open(L); // LUAOBJC_REGISTRY_SEL_CACHE
 	luaobjc_selector_open(L); // LUAOBJC_REGISTRY_SELECTOR_MT

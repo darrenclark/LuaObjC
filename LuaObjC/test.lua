@@ -73,6 +73,9 @@ end
 print("testClassInstance.testValue = " .. testClassInstance.testLuaValue)
 testClassInstance.testLuaFunc()
 
+-- Check that all objects point to the same 
+local testClassInstancePtr = testClassInstance:retain():autorelease()
+testClassInstancePtr.testLuaFunc()
 
 -- Conversion
 printHeader("Conversions")

@@ -10,6 +10,7 @@
 #import "luaobjc_selector.h"
 #import "luaobjc_struct.h"
 
+#define OBJECTS		"luaobjc_objects"
 #define OBJECT_MT	"luaobjc_object_mt"
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
 
@@ -52,6 +53,8 @@ void luaobjc_object_open(lua_State *L) {
 	
 	lua_pop(L, 1); // pop metatable
 	
+	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_OBJECTS, OBJECTS);
+	lua_pop(L, 1);
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
 	lua_pop(L, 1);
@@ -67,17 +70,35 @@ void luaobjc_object_open(lua_State *L) {
 }
 
 static inline void object_push_internal(lua_State *L, id object) {
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECTS, OBJECTS); // ..., OBJECTS
+	lua_pushlightuserdata(L, object); // ..., OBJECTS, id
+	lua_rawget(L, -2); // ..., OBJECTS, luaobjc_object?
+	
+	// found object that already exists in Lua?
+	if (lua_isnoneornil(L, -1) == NO) {
+		lua_replace(L, -2); // ..., luaobjc_object
+		return;
+	} else {
+		lua_pop(L, 1); // ..., OBJECTS
+	}
+	
 	// don't use a light userdata so that we can use lua_setfenv
-	luaobjc_object *new_userdata = lua_newuserdata(L, sizeof(luaobjc_object));
+	luaobjc_object *new_userdata = lua_newuserdata(L, sizeof(luaobjc_object)); // ..., OBJECTS, luaobjc_object
 	new_userdata->object = object;
 	new_userdata->current_superclass = [object class];
 	new_userdata->strong = NO;
 	
-	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
-	lua_setmetatable(L, -2);
+	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT); // ..., OBJECTS, luaobjc_object, object_mt
+	lua_setmetatable(L, -2); // ..., OBJECTS, luaobjc_object
 	
-	lua_newtable(L);
-	lua_setfenv(L, -2);
+	lua_newtable(L); // ..., OBJECTS, luaobjc_object, fenv
+	lua_setfenv(L, -2); // ..., OBJECTS, luaobjc_object
+	
+	lua_pushlightuserdata(L, object); // ..., OBJECTS, luaobjc_object, id
+	lua_pushvalue(L, -2); // ..., OBJECTS, luaobjc_object, id, luaobjc_object
+	
+	lua_rawset(L, -4); // ..., OBJECTS, luaobjc_object
+	lua_replace(L, -2); // ..., luaobjc_object
 }
 
 void luaobjc_object_push(lua_State *L, id object) {

@@ -1,7 +1,7 @@
 local super = objc.new_class("LuaSuperClass", "NSObject")
 super:register()
 
---[[function super:init()
+function super:init()
 	self = objc.super(self, "init")
 	if self == nil then
 		return nil
@@ -9,7 +9,7 @@ super:register()
 	
 	print("LuaSuperClass init")
 	return self
-end]]
+end
 
 function super:theMethod()
 	print("LuaSuperClass method called!")
@@ -19,7 +19,7 @@ end
 local sub = objc.new_class("LuaSubClass", "LuaSuperClass")
 sub:register()
 
---[[function sub:init()
+function sub:init()
 	self = objc.super(self, "init")
 	if self == nil then
 		return nil
@@ -27,7 +27,7 @@ sub:register()
 	
 	print("LuaSubClass init")
 	return self
-end]]
+end
 
 function sub:theMethod()
 	print("LuaSubClass method called!")
