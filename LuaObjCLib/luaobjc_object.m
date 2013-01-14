@@ -54,6 +54,12 @@ void luaobjc_object_open(lua_State *L) {
 	lua_pop(L, 1); // pop metatable
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_OBJECTS, OBJECTS);
+	// make keys and values weak in this table
+	lua_newtable(L);
+	lua_pushstring(L, "__mode");
+	lua_pushstring(L, "kv");
+	lua_rawset(L, -3);
+	lua_setmetatable(L, -2);
 	lua_pop(L, 1);
 	
 	LUAOBJC_NEW_REGISTERY_TABLE(L, LUAOBJC_REGISTRY_UNKNOWN_MT, UNKNOWN_MT);
