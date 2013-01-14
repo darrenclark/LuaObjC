@@ -43,6 +43,7 @@ lua_CFunction luaobjc_fficall_get(luaobjc_method_info *info) {
 
 static int fficall(lua_State *L) {
 	luaobjc_method_info *info = (luaobjc_method_info *)lua_touserdata(L, lua_upvalueindex(1));
+	luaobjc_object_check(L, 1);
 	
 	ffi_cif cif;
 	ffi_type *types[info->num_args];
@@ -194,7 +195,18 @@ static int fficall(lua_State *L) {
 		lua_pushstring(L, "ffi call panic! ffi_prep_cif failed");
 		lua_error(L);
 	}
-	ffi_call(&cif, (void(*)(void))objc_msgSend, &ret_value, values);
+	
+	if (info->is_super_call == NO) {
+		ffi_call(&cif, (void(*)(void))objc_msgSend, &ret_value, values);
+	} else {
+		luaobjc_object *object = (luaobjc_object *)lua_touserdata(L, 1);
+		struct objc_super super_info;
+		
+		super_info.receiver = info->target;
+		super_info.super_class = object->current_superclass;
+		value_holders[0].ptr = &super_info;
+		ffi_call(&cif, (void(*)(void))objc_msgSendSuper, &ret_value, values);
+	}
 	
 	
 	// Return (possibly) a value to Lua

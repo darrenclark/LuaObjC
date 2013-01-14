@@ -171,7 +171,14 @@ for j = 1, 5 do
 end
 
 -- objc.call/objc.super tests
+printHeader("Super call tests")
 print(objc.call(testClassInstance, "underscore_method:_pt2:", "Hello", "World"))
+
+require("LuaSuperTest")
+
+local subClassObj = objc.class("LuaSubClass"):alloc():init():autorelease()
+subClassObj:theMethod()
+objc.super(subClassObj, "theMethod")
 
 -- Class tests
 printHeader("Classes")

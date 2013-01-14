@@ -31,6 +31,8 @@ typedef struct luaclass {
 
 
 typedef struct method_ffi_info {
+	lua_State *lua;
+	Class class;
 	ffi_cif cif;
 	ffi_closure *closure;
 	ffi_type *args[0];
@@ -555,14 +557,16 @@ static BOOL check_declarations_for_selector(Class cls, SEL sel, const char **typ
 }
 
 static void method_binding_internal(ffi_cif *cif, void *ret, void *args[], void *userdata) {
-	lua_State *L = (lua_State *)userdata;
+	method_ffi_info *ffi_info = (method_ffi_info *)userdata;
+	lua_State *L = ffi_info->lua;
 	
 	id target = *(id *)args[0];
 	SEL sel = *(SEL *)args[1];
 	
-	Class cls = [target class];
+	Class cls = ffi_info->class;
 	
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_LUACLASSES, LUACLASSES); // luaclasses
+	
 	lua_pushlightuserdata(L, (void *)cls); // luaclasses, cls
 	lua_rawget(L, -2); // luaclasses, luaclass
 	lua_getfenv(L, -1); // luaclasses, luaclass, fenv
@@ -570,6 +574,9 @@ static void method_binding_internal(ffi_cif *cif, void *ret, void *args[], void 
 	
 	lua_pushlightuserdata(L, (void *)sel); // luaclasses, fenv, sel
 	lua_rawget(L, -2); // luaclasses, fenv, tbl
+	
+	if (lua_isnil(L, -1))
+		[NSException raise:@"LuaClassInvalidMethodCall" format:@"No function found in '%@' for '%s'", [target class], (const char *)sel];
 	
 	lua_pushinteger(L, METHOD_FUNC_INDEX); // luaclasses, fenv, tbl, METHOD_FUNC_INDEX
 	lua_rawget(L, -2); // luaclasses, fenv, tbl, func
@@ -717,6 +724,8 @@ static void method_binding_stret(ffi_cif *cif, void *ret, void *args[], void *us
 static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, const char *type_encoding, BOOL instance_method) {
 	int num_args = luaobjc_method_sig_num_types(type_encoding) - 1;
 	
+	luaclass *class = check_luaclass(L, luaclass_idx);
+	
 	BOOL use_stret = NO;
 	BOOL hack_i386_ret = NO; // See near end of function for details
 	if (type_encoding[0] == '{') {
@@ -752,6 +761,8 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	lua_pushinteger(L, METHOD_FFI_INDEX); // ..., fenv, sel, tbl, METHOD_FFI_INDEX
 	method_ffi_info *ffi_info = (method_ffi_info *)lua_newuserdata(L,
 		sizeof(method_ffi_info) + sizeof(ffi_type *) * (num_args + extra_stret_arg));
+	ffi_info->lua = L;
+	ffi_info->class = class->class;
 	// ..., fenv, sel, tbl, METHOD_FFI_INDEX, method_ffi_info
 	lua_rawset(L, -3); // ..., fenv, sel, tbl
 	
@@ -764,8 +775,6 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 	
 	char objc_encoding[strlen(type_encoding)];
 	luaobjc_method_sig_revert(type_encoding, objc_encoding);
-	
-	luaclass *class = check_luaclass(L, luaclass_idx);
 	
 	void(*bound_method)(void);
 	
@@ -796,7 +805,7 @@ static void bind_method(lua_State *L, int luaclass_idx, int func_idx, SEL sel, c
 		ret_type = &ffi_type_uint64;
 	
 	ffi_prep_cif(&ffi_info->cif, FFI_DEFAULT_ABI, num_args + extra_stret_arg, ret_type, ffi_info->args);
-	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, closure_func, (void *)L, bound_method);
+	ffi_prep_closure_loc(ffi_info->closure, &ffi_info->cif, closure_func, (void *)ffi_info, bound_method);
 	
 	Class target = class->class;
 	if (instance_method == NO)

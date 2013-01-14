@@ -14,11 +14,6 @@
 #define UNKNOWN_MT	"luaobjc_unknown_mt"
 
 
-typedef struct luaobjc_object {
-	id object;
-	BOOL strong;
-} luaobjc_object;
-
 
 static int get_class(lua_State *L);
 static int to_objc(lua_State *L);
@@ -26,6 +21,7 @@ static int to_lua(lua_State *L);
 static int strong_ref(lua_State *L);
 static int weak_ref(lua_State *L);
 static int call(lua_State *L);
+static int call_super(lua_State *L);
 
 static int object_index(lua_State *L);
 static int object_newindex(lua_State *L);
@@ -66,12 +62,15 @@ void luaobjc_object_open(lua_State *L) {
 	LUAOBJC_ADD_METHOD("strong", strong_ref)
 	LUAOBJC_ADD_METHOD("weak", weak_ref)
 	LUAOBJC_ADD_METHOD("call", call)
+	LUAOBJC_ADD_METHOD("call_super", call_super)
+	LUAOBJC_ADD_METHOD("super", call_super);
 }
 
 static inline void object_push_internal(lua_State *L, id object) {
 	// don't use a light userdata so that we can use lua_setfenv
 	luaobjc_object *new_userdata = lua_newuserdata(L, sizeof(luaobjc_object));
 	new_userdata->object = object;
+	new_userdata->current_superclass = [object class];
 	new_userdata->strong = NO;
 	
 	LUAOBJC_GET_REGISTRY_TABLE(L, LUAOBJC_REGISTRY_OBJECT_MT, OBJECT_MT);
@@ -384,7 +383,7 @@ static int weak_ref(lua_State *L) {
 	return 0;
 }
 
-static int call(lua_State *L) {
+static int call_internal(lua_State *L, BOOL is_super_call) {
 	id target = luaobjc_object_check(L, 1);
 	SEL sel = luaobjc_selector_check_s(L, 2);
 	
@@ -398,6 +397,7 @@ static int call(lua_State *L) {
 		lua_pushfstring(L, "target doesn't respond to %s", (const char *)sel);
 		lua_error(L);
 	}
+	method_info->is_super_call = is_super_call;
 	// ..., sel, method_info
 	
 	lua_CFunction c_func = luaobjc_fastcall_get(method_info);
@@ -415,13 +415,31 @@ static int call(lua_State *L) {
 	lua_replace(L, -2); // ..., c_func
 	
 	lua_pushvalue(L, 1); // ..., c_func, self
+	
+	luaobjc_object *object = (luaobjc_object *)lua_touserdata(L, 1);
+	Class current_superclass = object->current_superclass;
+	if (is_super_call)
+		object->current_superclass = [current_superclass superclass];
+	
 	for (int i = 1; i <= call_args; i++)
 		lua_pushvalue(L, 2 + i);
 	// ..., c_func, self, ...args..
 	
 	// call the c closure we just pushed
 	lua_call(L, call_args + 1, 1); // ..., result
+	
+	if (is_super_call)
+		object->current_superclass = current_superclass;
+	
 	return 1;
+}
+
+static int call(lua_State *L) {
+	return call_internal(L, NO);
+}
+
+static int call_super(lua_State *L) {
+	return call_internal(L, YES);
 }
 
 static int object_index(lua_State *L) {
@@ -507,9 +525,10 @@ static int object_gc(lua_State *L) {
 static int generic_call(lua_State *L) {
 	luaobjc_method_info *info = (luaobjc_method_info *)lua_touserdata(L, lua_upvalueindex(1));
 	
+	luaobjc_object_check(L, 1);
 	id target = info->target;
 	SEL sel = info->selector;
-		
+	
 	NSMethodSignature *methodSig = [target methodSignatureForSelector:sel];
 	NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSig];
 	
@@ -525,7 +544,31 @@ static int generic_call(lua_State *L) {
 		convert_lua_arg(L, current_arg, invocation, current_arg, luaobjc_method_sig_arg(info->sig, current_arg));
 	}
 	
-	[invocation invoke];
+	
+	if (info->is_super_call) {
+		luaobjc_object *object = (luaobjc_object *)lua_touserdata(L, 1);
+		
+		// swap method implementations to effectively call super
+		// Based on Lua Wax implementation. See:
+		// https://github.com/probablycorey/wax/blob/master/lib/wax_instance.m
+		Method self_method = class_getInstanceMethod([target class], sel);
+		Method super_method = class_getInstanceMethod(object->current_superclass, sel);
+		
+		if (super_method == NULL || self_method == super_method) {
+			lua_pushfstring(L, "unable to call super method, method not found in super class");
+			lua_error(L);
+		}
+		
+		IMP self_imp = method_getImplementation(self_method);
+		IMP super_imp = method_getImplementation(super_method);
+		
+		method_setImplementation(self_method, super_imp);
+		[invocation invoke];
+		method_setImplementation(self_method, self_imp);
+		
+	} else {
+		[invocation invoke];
+	}
 	
 	const char *return_type = info->sig; // return value is first type in sig
 	
@@ -914,6 +957,7 @@ static luaobjc_method_info *push_method_info(lua_State *L, id target, SEL sel, i
 	luaobjc_method_info *pushed = (luaobjc_method_info *)lua_newuserdata(L, size);
 	pushed->target = target;
 	pushed->selector = sel;
+	pushed->is_super_call = NO;
 	pushed->num_args = num_args;
 	
 	pushed->sig = (char*)pushed + sizeof(luaobjc_method_info);

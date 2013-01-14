@@ -9,6 +9,12 @@
 
 LUAOBJC_EXTERN void luaobjc_object_open(lua_State *L);
 
+typedef struct luaobjc_object {
+	id object;
+	Class current_superclass;
+	BOOL strong;
+} luaobjc_object;
+
 // Pushes an Objective C object and converts NSNumber/NSString to lua numbers/strings
 // For converting more complex types like NSArray/NSDictionary, use luobjc_to_lua
 LUAOBJC_EXTERN void luaobjc_object_push(lua_State *L, id object);
@@ -44,6 +50,7 @@ LUAOBJC_EXTERN luaobjc_unknown luaobjc_unknown_check(lua_State *L, int idx, size
 typedef struct luaobjc_method_info {
 	id target;
 	SEL selector;
+	BOOL is_super_call;
 	int num_args;
 	const char *sig;
 } luaobjc_method_info;
